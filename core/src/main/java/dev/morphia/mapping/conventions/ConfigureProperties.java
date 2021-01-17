@@ -1,13 +1,14 @@
-package dev.morphia.mapping;
+package dev.morphia.mapping.conventions;
 
 import dev.morphia.Datastore;
 import dev.morphia.annotations.AlsoLoad;
-import dev.morphia.annotations.Embedded;
-import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Handler;
 import dev.morphia.annotations.Property;
 import dev.morphia.annotations.Transient;
 import dev.morphia.annotations.experimental.IdField;
+import dev.morphia.mapping.Mapper;
+import dev.morphia.mapping.MapperOptions;
+import dev.morphia.mapping.MappingException;
 import dev.morphia.mapping.codec.ArrayFieldAccessor;
 import dev.morphia.mapping.codec.FieldAccessor;
 import dev.morphia.mapping.codec.MorphiaPropertySerialization;
@@ -23,11 +24,14 @@ import java.util.Iterator;
 
 import static java.lang.reflect.Modifier.isAbstract;
 import static java.lang.reflect.Modifier.isStatic;
+
 /**
  * A set of conventions to apply to Morphia entities
+ *
+ * @since 2.2
  */
 @SuppressWarnings("unchecked")
-public class MorphiaDefaultsConvention implements MorphiaConvention {
+public class ConfigureProperties implements MorphiaConvention {
 
     private static boolean isTransient(FieldModelBuilder field) {
         return field.hasAnnotation(Transient.class)
@@ -38,19 +42,6 @@ public class MorphiaDefaultsConvention implements MorphiaConvention {
     @Override
     public void apply(Datastore datastore, EntityModelBuilder modelBuilder) {
         MapperOptions options = datastore.getMapper().getOptions();
-
-        final Entity entity = modelBuilder.getAnnotation(Entity.class);
-        final Embedded embedded = modelBuilder.getAnnotation(Embedded.class);
-        if (entity != null) {
-            modelBuilder.enableDiscriminator(entity.useDiscriminator());
-            modelBuilder.discriminatorKey(applyDefaults(entity.discriminatorKey(), options.getDiscriminatorKey()));
-        } else {
-            modelBuilder.enableDiscriminator(embedded == null || embedded.useDiscriminator());
-            modelBuilder.discriminatorKey(applyDefaults(embedded != null ? embedded.discriminatorKey() : Mapper.IGNORED_FIELDNAME,
-                options.getDiscriminatorKey()));
-        }
-
-        options.getDiscriminator().apply(modelBuilder);
 
         processFields(modelBuilder, datastore, options);
 

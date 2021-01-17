@@ -4,6 +4,10 @@ package dev.morphia.mapping;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Property;
 import dev.morphia.mapping.codec.MorphiaInstanceCreator;
+import dev.morphia.mapping.conventions.ConfigureProperties;
+import dev.morphia.mapping.conventions.FieldDiscovery;
+import dev.morphia.mapping.conventions.MorphiaConvention;
+import dev.morphia.mapping.conventions.MorphiaDefaultsConvention;
 import dev.morphia.query.DefaultQueryFactory;
 import dev.morphia.query.LegacyQueryFactory;
 import dev.morphia.query.QueryFactory;
@@ -224,7 +228,10 @@ public class MapperOptions {
     @SuppressWarnings("unused")
     public static final class Builder {
 
-        private final List<MorphiaConvention> conventions = new ArrayList<>(List.of(new MorphiaDefaultsConvention()));
+        private final List<MorphiaConvention> conventions = new ArrayList<>(List.of(
+            new MorphiaDefaultsConvention(),
+            new FieldDiscovery(),
+            new ConfigureProperties()));
         private boolean ignoreFinals;
         private boolean storeNulls;
         private boolean storeEmpties;

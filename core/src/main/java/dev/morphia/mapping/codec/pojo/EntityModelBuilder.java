@@ -2,17 +2,11 @@ package dev.morphia.mapping.codec.pojo;
 
 import dev.morphia.Datastore;
 import dev.morphia.annotations.Entity;
-import dev.morphia.annotations.Id;
-import dev.morphia.annotations.Property;
-import dev.morphia.annotations.Reference;
-import dev.morphia.annotations.Version;
 import dev.morphia.mapping.Mapper;
-import dev.morphia.mapping.MapperOptions;
-import dev.morphia.mapping.MorphiaConvention;
+import dev.morphia.mapping.conventions.MorphiaConvention;
 import dev.morphia.sofia.Sofia;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
@@ -50,6 +44,7 @@ public class EntityModelBuilder {
     private String idFieldName;
     private final List<EntityModel> interfaceModels;
     private EntityModel superclass;
+    private final Map<String, Map<String, Type>> parameterization;
 
     /**
      * Create a builder
@@ -62,8 +57,8 @@ public class EntityModelBuilder {
         this.type = type;
 
         buildHierarchy(this.type);
-        final Map<String, Map<String, Type>> parameterization = findParameterization(type);
-        propagateTypes(parameterization);
+        parameterization = findParameterization(type);
+        propagateTypes();
 
         if (!Object.class.equals(type.getSuperclass())) {
             this.superclass = datastore.getMapper().getEntityModel(type.getSuperclass());
@@ -74,14 +69,6 @@ public class EntityModelBuilder {
                                          .filter(Objects::nonNull)
                                          .collect(Collectors.toList());
 
-        List<Class<?>> list = new ArrayList<>(List.of(type));
-        list.addAll(classes);
-        for (Class<?> klass : list) {
-            String packageName = klass.getPackageName();
-            if (!(packageName.startsWith("java.") || packageName.startsWith("javax."))) {
-                processFields(klass, parameterization);
-            }
-        }
     }
 
     /**
@@ -99,6 +86,14 @@ public class EntityModelBuilder {
         temp.addAll(annotations);
         annotations.clear();
         annotations.addAll(temp);
+    }
+
+    public Set<Class<?>> classHierarchy() {
+        return classes;
+    }
+
+    public Map<String, Map<String, Type>> parameterization() {
+        return parameterization;
     }
 
     private Map<String, Map<String, Type>> findParameterization(Class<?> type) {
@@ -346,58 +341,8 @@ public class EntityModelBuilder {
         return list;
     }
 
-    private void processFields(Class<?> currentClass, Map<String, Map<String, Type>> parameterization) {
-        for (Field field : currentClass.getDeclaredFields()) {
-            TypeData<?> typeData = TypeData.newInstance(field);
 
-            Type genericType = field.getGenericType();
-            if (genericType instanceof TypeVariable) {
-                Map<String, Type> map = parameterization.get(currentClass.getName());
-                if (map != null) {
-                    Type mapped = map.get(((TypeVariable<?>) genericType).getName());
-                    if (mapped instanceof Class) {
-                        typeData = TypeData.newInstance(field.getGenericType(), (Class<?>) mapped);
-                    }
-                }
-            }
-
-            FieldModelBuilder fieldModelBuilder = FieldModel.builder()
-                                                            .field(field)
-                                                            .fieldName(field.getName())
-                                                            .typeData(typeData)
-                                                            .annotations(List.of(field.getDeclaredAnnotations()));
-            fieldModelBuilder.mappedName(getMappedFieldName(fieldModelBuilder));
-
-            addModel(fieldModelBuilder);
-        }
-    }
-
-    @SuppressWarnings("ConstantConditions")
-    private String getMappedFieldName(FieldModelBuilder fieldBuilder) {
-        MapperOptions options = datastore.getMapper().getOptions();
-        if (fieldBuilder.hasAnnotation(Id.class)) {
-            return "_id";
-        } else if (fieldBuilder.hasAnnotation(Property.class)) {
-            final Property mv = fieldBuilder.getAnnotation(Property.class);
-            if (!mv.value().equals(Mapper.IGNORED_FIELDNAME)) {
-                return mv.value();
-            }
-        } else if (fieldBuilder.hasAnnotation(Reference.class)) {
-            final Reference mr = fieldBuilder.getAnnotation(Reference.class);
-            if (!mr.value().equals(Mapper.IGNORED_FIELDNAME)) {
-                return mr.value();
-            }
-        } else if (fieldBuilder.hasAnnotation(Version.class)) {
-            final Version me = fieldBuilder.getAnnotation(Version.class);
-            if (!me.value().equals(Mapper.IGNORED_FIELDNAME)) {
-                return me.value();
-            }
-        }
-
-        return options.getFieldNaming().apply(fieldBuilder.name());
-    }
-
-    private void propagateTypes(Map<String, Map<String, Type>> parameterization) {
+    private void propagateTypes() {
         List<Map<String, Type>> parameters = new ArrayList<>(parameterization.values());
 
         for (int index = 0; index < parameters.size(); index++) {

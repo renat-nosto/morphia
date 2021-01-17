@@ -4,7 +4,7 @@ import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
 import dev.morphia.mapping.codec.pojo.EntityModel;
 import dev.morphia.mapping.codec.pojo.EntityModelBuilder;
-import dev.morphia.mapping.codec.pojo.FieldModelBuilder;
+import dev.morphia.mapping.codec.pojo.FieldModel;
 import dev.morphia.test.TestBase;
 import org.bson.Document;
 import org.bson.types.ObjectId;
@@ -26,22 +26,21 @@ public class EntityModelTest extends TestBase {
 
     @Test
     public void testGenericFields() {
-        EntityModelBuilder builder = new EntityModelBuilder(getDs(), Base.class);
-        assertEquals(builder.fieldModels().size(), 3, builder.fieldModels().stream()
-                                                             .map(FieldModelBuilder::name)
-                                                             .collect(joining(", ")));
+        EntityModel model = getDs().getMapper().map(Base.class).get(0);
+        assertEquals(model.getFields().size(), 3, model.getFields().stream()
+                                                       .map(FieldModel::getName)
+                                                       .collect(joining(", ")));
 
-        builder = new EntityModelBuilder(getDs(), Parent.class);
-        assertEquals(builder.fieldModels().size(), 4, builder.fieldModels().stream()
-                                                             .map(FieldModelBuilder::name)
-                                                             .collect(joining(", ")));
+        model = getDs().getMapper().map(Parent.class).get(0);
+        assertEquals(model.getFields().size(), 4, model.getFields().stream()
+                                                       .map(FieldModel::getName)
+                                                       .collect(joining(", ")));
 
-        builder = new EntityModelBuilder(getDs(), Child.class);
-        assertEquals(builder.fieldModels().size(), 5, builder.fieldModels().stream()
-                                                             .map(FieldModelBuilder::name)
-                                                             .collect(joining(", ")));
+        model = getDs().getMapper().map(Child.class).get(0);
+        assertEquals(model.getFields().size(), 5, model.getFields().stream()
+                                                       .map(FieldModel::getName)
+                                                       .collect(joining(", ")));
 
-        EntityModel model = builder.build();
         assertEquals(model.getField("t").getType(), String.class);
         assertEquals(model.getField("someField").getType(), LocalDate.class);
     }
