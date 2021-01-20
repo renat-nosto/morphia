@@ -2,22 +2,21 @@ package dev.morphia.mapping.conventions;
 
 import dev.morphia.Datastore;
 import dev.morphia.annotations.AlsoLoad;
-import dev.morphia.annotations.Handler;
+import dev.morphia.annotations.Id;
 import dev.morphia.annotations.Property;
 import dev.morphia.annotations.Transient;
+import dev.morphia.annotations.Version;
 import dev.morphia.annotations.experimental.IdField;
 import dev.morphia.mapping.Mapper;
 import dev.morphia.mapping.MapperOptions;
-import dev.morphia.mapping.MappingException;
 import dev.morphia.mapping.codec.ArrayFieldAccessor;
 import dev.morphia.mapping.codec.FieldAccessor;
 import dev.morphia.mapping.codec.MorphiaPropertySerialization;
 import dev.morphia.mapping.codec.pojo.EntityModelBuilder;
-import dev.morphia.mapping.codec.pojo.FieldModelBuilder;
+import dev.morphia.mapping.codec.pojo.PropertyModelBuilder;
 import dev.morphia.mapping.codec.pojo.TypeData;
 import org.bson.codecs.pojo.PropertyAccessor;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Iterator;
@@ -33,42 +32,56 @@ import static java.lang.reflect.Modifier.isStatic;
 @SuppressWarnings("unchecked")
 public class ConfigureProperties implements MorphiaConvention {
 
-    private static boolean isTransient(FieldModelBuilder field) {
-        return field.hasAnnotation(Transient.class)
-               || field.hasAnnotation(java.beans.Transient.class)
-               || Modifier.isTransient(field.field().getModifiers());
+    private static boolean isTransient(PropertyModelBuilder property) {
+        return property.hasAnnotation(Transient.class)
+               || property.hasAnnotation(java.beans.Transient.class)
+               || Modifier.isTransient(property.modifiers());
     }
 
     @Override
     public void apply(Datastore datastore, EntityModelBuilder modelBuilder) {
         MapperOptions options = datastore.getMapper().getOptions();
 
-        processFields(modelBuilder, datastore, options);
+        processProperties(modelBuilder, options);
 
-        if (modelBuilder.idFieldName() == null) {
-            IdField idField = modelBuilder.getAnnotation(IdField.class);
-            if (idField != null) {
-                modelBuilder.idFieldName(idField.value());
-                FieldModelBuilder fieldModelBuilder = modelBuilder.fieldModelByFieldName(idField.value());
-                fieldModelBuilder.mappedName("_id");
+        if (modelBuilder.idPropertyName() == null) {
+            IdField idProperty = modelBuilder.getAnnotation(IdField.class);
+            if (idProperty != null) {
+                modelBuilder.idPropertyName(idProperty.value());
+                PropertyModelBuilder propertyModelBuilder = modelBuilder.propertyModelByName(idProperty.value());
+                propertyModelBuilder.mappedName("_id");
             }
         }
 
     }
 
-    @SuppressWarnings("rawtypes")
-    void processFields(EntityModelBuilder modelBuilder, Datastore datastore, MapperOptions options) {
-        Iterator<FieldModelBuilder> iterator = modelBuilder.fieldModels().iterator();
-        while (iterator.hasNext()) {
-            final FieldModelBuilder builder = iterator.next();
-            final Field field = builder.field();
+    private void buildProperty(MapperOptions options, PropertyModelBuilder builder) {
 
-            if (isStatic(field.getModifiers()) || isTransient(builder)) {
+        builder.serialization(new MorphiaPropertySerialization(options, builder));
+        if (isNotConcrete(builder.typeData())) {
+            builder.discriminatorEnabled(true);
+        }
+    }
+
+    private PropertyAccessor<? super Object> getAccessor(Field field, PropertyModelBuilder property) {
+        return field.getType().isArray() && !field.getType().getComponentType().equals(byte.class)
+               ? new ArrayFieldAccessor(property.typeData(), field)
+               : new FieldAccessor(field);
+    }
+
+    @SuppressWarnings("rawtypes")
+    void processProperties(EntityModelBuilder modelBuilder, MapperOptions options) {
+        Iterator<PropertyModelBuilder> iterator = modelBuilder.propertyModels().iterator();
+        while (iterator.hasNext()) {
+            final PropertyModelBuilder builder = iterator.next();
+            final int modifiers = builder.modifiers();
+
+            if (isStatic(modifiers) || isTransient(builder)) {
                 iterator.remove();
             } else {
                 Property property = builder.getAnnotation(Property.class);
                 if (property != null && !property.concreteClass().equals(Object.class)) {
-                    TypeData typeData = TypeData.newInstance(field.getGenericType(), property.concreteClass());
+                    TypeData typeData = builder.typeData().withType(property.concreteClass());
                     builder.typeData(typeData);
                 }
 
@@ -78,42 +91,15 @@ public class ConfigureProperties implements MorphiaConvention {
                         builder.alternateName(name);
                     }
                 }
-            }
 
-            buildField(datastore, options, builder, field);
-        }
-    }
+                if (builder.getAnnotation(Id.class) != null) {
+                    modelBuilder.idPropertyName(builder.name());
+                }
+                if (builder.getAnnotation(Version.class) != null) {
+                    modelBuilder.versionPropertyName(builder.name());
+                }
 
-    private void buildField(Datastore datastore,
-                            MapperOptions options,
-                            FieldModelBuilder builder,
-                            Field field) {
-
-        builder
-            .serialization(new MorphiaPropertySerialization(options, builder))
-            .accessor(getAccessor(field, builder));
-        configureCodec(datastore, builder, field);
-
-        if (isNotConcrete(builder.typeData())) {
-            builder.discriminatorEnabled(true);
-        }
-    }
-
-    private PropertyAccessor<? super Object> getAccessor(Field field, FieldModelBuilder property) {
-        return field.getType().isArray() && !field.getType().getComponentType().equals(byte.class)
-               ? new ArrayFieldAccessor(property.typeData(), field)
-               : new FieldAccessor(field);
-    }
-
-    private void configureCodec(Datastore datastore, FieldModelBuilder builder, Field field) {
-        Handler handler = getHandler(builder);
-        if (handler != null) {
-            try {
-                builder.codec(handler.value()
-                                     .getDeclaredConstructor(Datastore.class, Field.class, TypeData.class)
-                                     .newInstance(datastore, field, builder.typeData()));
-            } catch (ReflectiveOperationException e) {
-                throw new MappingException(e.getMessage(), e);
+                buildProperty(options, builder);
             }
         }
     }
@@ -129,23 +115,6 @@ public class ConfigureProperties implements MorphiaConvention {
         return isNotConcrete(type);
     }
 
-    private Handler getHandler(FieldModelBuilder builder) {
-        Handler handler = builder.typeData().getType().getAnnotation(Handler.class);
-
-        if (handler == null) {
-            handler = (Handler) builder.annotations()
-                                    .stream().filter(a -> a.getClass().equals(Handler.class))
-                                    .findFirst().orElse(null);
-            if (handler == null) {
-                Iterator<Annotation> iterator = builder.annotations().iterator();
-                while (handler == null && iterator.hasNext()) {
-                    handler = iterator.next().annotationType().getAnnotation(Handler.class);
-                }
-            }
-        }
-
-        return handler;
-    }
 
     private boolean isNotConcrete(Class<?> type) {
         Class<?> componentType = type;

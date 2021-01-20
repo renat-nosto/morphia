@@ -5,7 +5,7 @@ import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
 import dev.morphia.annotations.Property;
 import dev.morphia.mapping.codec.pojo.EntityModel;
-import dev.morphia.mapping.codec.pojo.FieldModel;
+import dev.morphia.mapping.codec.pojo.PropertyModel;
 import dev.morphia.mapping.codec.pojo.TypeData;
 import org.bson.types.ObjectId;
 import org.junit.Before;
@@ -22,7 +22,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
-public class FieldModelTest extends TestBase {
+public class PropertyModelTest extends TestBase {
 
     private EntityModel entityModel;
 
@@ -34,7 +34,7 @@ public class FieldModelTest extends TestBase {
 
     @Test
     public void arrayFieldMapping() {
-        final FieldModel field = getMappedField("arrayOfInt");
+        final PropertyModel field = getMappedField("arrayOfInt");
 
         assertFalse(field.isScalarValue());
         assertTrue(field.isMultipleValues());
@@ -44,13 +44,9 @@ public class FieldModelTest extends TestBase {
         assertEquals("arrayOfInt", field.getMappedName());
     }
 
-    private FieldModel getMappedField(String name) {
-        return entityModel.getField(name);
-    }
-
     @Test
     public void basicFieldMapping() {
-        final FieldModel field = getMappedField("name");
+        final PropertyModel field = getMappedField("name");
 
         assertTrue(field.isScalarValue());
         assertSame(String.class, field.getType());
@@ -60,7 +56,7 @@ public class FieldModelTest extends TestBase {
 
     @Test
     public void collectionFieldMapping() {
-        final FieldModel field = getMappedField("listOfString");
+        final PropertyModel field = getMappedField("listOfString");
 
         assertFalse(field.isScalarValue());
         assertTrue(field.isMultipleValues());
@@ -73,7 +69,7 @@ public class FieldModelTest extends TestBase {
 
     @Test
     public void idFieldMapping() {
-        final FieldModel field = getMappedField("id");
+        final PropertyModel field = getMappedField("id");
 
         assertTrue(field.isScalarValue());
         assertSame(ObjectId.class, field.getType());
@@ -83,7 +79,7 @@ public class FieldModelTest extends TestBase {
 
     @Test
     public void nestedCollectionsMapping() {
-        final FieldModel field = getMappedField("listOfListOfString");
+        final PropertyModel field = getMappedField("listOfListOfString");
 
         assertFalse(field.isScalarValue());
         assertTrue(field.isMultipleValues());
@@ -108,6 +104,10 @@ public class FieldModelTest extends TestBase {
                                   .filter(eq("_id", testEntity.id))
                                   .first()
                                .listOfListOfString);
+    }
+
+    private PropertyModel getMappedField(String name) {
+        return entityModel.getProperty(name);
     }
 
     private List<String> dbList(String... values) {

@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 @SuppressWarnings("UnusedReturnValue")
 public class EntityModelBuilder {
     private final Datastore datastore;
-    private final List<FieldModelBuilder> fieldModels = new ArrayList<>();
+    private final List<PropertyModelBuilder> propertyModels = new ArrayList<>();
     private final Class<?> type;
     private final Map<Class<? extends Annotation>, Annotation> annotationsMap = new HashMap<>();
     private final Set<Class<?>> classes = new LinkedHashSet<>();
@@ -41,7 +41,8 @@ public class EntityModelBuilder {
     private boolean discriminatorEnabled;
     private String discriminator;
     private String discriminatorKey;
-    private String idFieldName;
+    private String idPropertyName;
+    private String versionPropertyName;
     private final List<EntityModel> interfaceModels;
     private EntityModel superclass;
     private final Map<String, Map<String, Type>> parameterization;
@@ -133,12 +134,12 @@ public class EntityModelBuilder {
     }
 
     /**
-     * Adds a field to the model
-     *
-     * @param builder the field to add
+     * Adds a property to the model
      */
-    public void addModel(FieldModelBuilder builder) {
-        fieldModels.add(builder);
+    public PropertyModelBuilder addProperty() {
+        PropertyModelBuilder builder = PropertyModel.builder(datastore);
+        propertyModels.add(builder);
+        return builder;
     }
 
     /**
@@ -216,23 +217,21 @@ public class EntityModelBuilder {
     }
 
     /**
-     * Gets a field by its name
-     *
-     * @param name the name
-     * @return the field
-     * @throws NoSuchElementException if no value is present
+     * @return the name of the id property
      */
-    public FieldModelBuilder fieldModelByFieldName(String name) throws NoSuchElementException {
-        return fieldModels.stream().filter(f -> f.field().getName().equals(name))
-                          .findFirst()
-                          .orElseThrow();
+    public String idPropertyName() {
+        return idPropertyName;
     }
 
     /**
-     * @return the fields on this model
+     * Sets the name of the id property
+     *
+     * @param name the name
+     * @return this
      */
-    public List<FieldModelBuilder> fieldModels() {
-        return fieldModels;
+    public EntityModelBuilder idPropertyName(String name) {
+        this.idPropertyName = name;
+        return this;
     }
 
     /**
@@ -268,20 +267,40 @@ public class EntityModelBuilder {
     }
 
     /**
-     * @return the name of the id field
+     * Gets a property by its name
+     *
+     * @param name the name
+     * @return the property
+     * @throws NoSuchElementException if no value is present
      */
-    public String idFieldName() {
-        return idFieldName;
+    public PropertyModelBuilder propertyModelByName(String name) throws NoSuchElementException {
+        return propertyModels.stream().filter(f -> f.name().equals(name))
+                             .findFirst()
+                             .orElseThrow();
     }
 
     /**
-     * Sets the name of the id field
+     * @return the properties on this model
+     */
+    public List<PropertyModelBuilder> propertyModels() {
+        return propertyModels;
+    }
+
+    /**
+     * @return the name of the version property
+     */
+    public String versionPropertyName() {
+        return versionPropertyName;
+    }
+
+    /**
+     * Sets the name of the version property
      *
      * @param name the name
      * @return this
      */
-    public EntityModelBuilder idFieldName(String name) {
-        this.idFieldName = name;
+    public EntityModelBuilder versionPropertyName(String name) {
+        this.versionPropertyName = name;
         return this;
     }
 

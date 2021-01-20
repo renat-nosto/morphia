@@ -18,7 +18,7 @@ import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
 import dev.morphia.annotations.Property;
 import dev.morphia.mapping.codec.pojo.EntityModel;
-import dev.morphia.mapping.codec.pojo.FieldModel;
+import dev.morphia.mapping.codec.pojo.PropertyModel;
 import dev.morphia.query.FindOptions;
 import dev.morphia.test.models.SpecializedEntity;
 import org.bson.types.ObjectId;
@@ -42,7 +42,7 @@ public class GenericsMappingTest extends TestBase {
     public void testGenericEntities() {
         EntityModel entityModel = getMapper().map(SpecializedEntity.class).get(0);
 
-        FieldModel test = entityModel.getField("test");
+        PropertyModel test = entityModel.getProperty("test");
         assertEquals(test.getType(), UUID.class);
 
 

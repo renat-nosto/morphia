@@ -3,7 +3,7 @@ package dev.morphia.mapping.validation.fieldrules;
 
 import dev.morphia.mapping.Mapper;
 import dev.morphia.mapping.codec.pojo.EntityModel;
-import dev.morphia.mapping.codec.pojo.FieldModel;
+import dev.morphia.mapping.codec.pojo.PropertyModel;
 import dev.morphia.mapping.codec.pojo.TypeData;
 import dev.morphia.mapping.validation.ConstraintViolation;
 import dev.morphia.mapping.validation.ConstraintViolation.Level;
@@ -23,7 +23,7 @@ public class MapKeyTypeConstraint extends FieldConstraint {
     private static final String SUPPORTED = "(Map<String/Enum/Long/ObjectId/..., ?>)";
 
     @Override
-    protected void check(Mapper mapper, EntityModel entityModel, FieldModel mf, Set<ConstraintViolation> ve) {
+    protected void check(Mapper mapper, EntityModel entityModel, PropertyModel mf, Set<ConstraintViolation> ve) {
         if (mf.isMap()) {
             Class<?> aClass = null;
             List<TypeData<?>> typeParameters = mf.getTypeData().getTypeParameters();

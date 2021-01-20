@@ -2,7 +2,7 @@ package dev.morphia.mapping.validation.fieldrules;
 
 import dev.morphia.mapping.Mapper;
 import dev.morphia.mapping.codec.pojo.EntityModel;
-import dev.morphia.mapping.codec.pojo.FieldModel;
+import dev.morphia.mapping.codec.pojo.PropertyModel;
 import dev.morphia.mapping.validation.ConstraintViolation;
 import dev.morphia.mapping.validation.ConstraintViolation.Level;
 
@@ -29,7 +29,7 @@ public class ContradictingFieldAnnotation extends FieldConstraint {
     }
 
     @Override
-    protected final void check(Mapper mapper, EntityModel entityModel, FieldModel mf, Set<ConstraintViolation> ve) {
+    protected final void check(Mapper mapper, EntityModel entityModel, PropertyModel mf, Set<ConstraintViolation> ve) {
         if (mf.hasAnnotation(a1) && mf.hasAnnotation(a2)) {
             ve.add(new ConstraintViolation(Level.FATAL, entityModel, mf, getClass(),
                 String.format("A field can be either annotated with @%s OR @%s, but not both.",

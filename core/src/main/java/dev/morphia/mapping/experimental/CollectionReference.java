@@ -5,7 +5,7 @@ import com.mongodb.client.MongoCursor;
 import dev.morphia.Datastore;
 import dev.morphia.mapping.Mapper;
 import dev.morphia.mapping.codec.pojo.EntityModel;
-import dev.morphia.mapping.codec.pojo.FieldModel;
+import dev.morphia.mapping.codec.pojo.PropertyModel;
 import dev.morphia.mapping.codec.references.ReferenceCodec;
 import dev.morphia.mapping.lazy.proxy.ReferenceException;
 import dev.morphia.sofia.Sofia;
@@ -98,7 +98,7 @@ public abstract class CollectionReference<C extends Collection> extends MorphiaR
     }
 
     @Override
-    public Object encode(Mapper mapper, Object value, FieldModel field) {
+    public Object encode(Mapper mapper, Object value, PropertyModel field) {
         if (isResolved()) {
             List ids = new ArrayList();
             for (Object entity : get()) {
@@ -114,7 +114,7 @@ public abstract class CollectionReference<C extends Collection> extends MorphiaR
     final List<Object> getId(Mapper mapper, Datastore datastore, EntityModel entityModel) {
         if (ids == null) {
             ids = getValues().stream()
-                             .map(v -> ReferenceCodec.encodeId(mapper, datastore, v, entityModel))
+                             .map(v -> ReferenceCodec.encodeId(mapper, v, entityModel))
                              .collect(Collectors.toList());
         }
         return ids;

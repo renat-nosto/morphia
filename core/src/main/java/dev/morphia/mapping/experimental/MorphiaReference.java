@@ -5,7 +5,7 @@ import dev.morphia.Datastore;
 import dev.morphia.annotations.Handler;
 import dev.morphia.mapping.Mapper;
 import dev.morphia.mapping.codec.pojo.EntityModel;
-import dev.morphia.mapping.codec.pojo.FieldModel;
+import dev.morphia.mapping.codec.pojo.PropertyModel;
 
 import java.util.List;
 import java.util.Map;
@@ -52,7 +52,7 @@ public abstract class MorphiaReference<T> {
         }
     }
 
-    static Object wrapId(Mapper mapper, FieldModel field, Object entity) {
+    static Object wrapId(Mapper mapper, PropertyModel field, Object entity) {
         Object id = mapper.getId(entity);
         mapper.getEntityModel(entity.getClass());
         Object encoded = id;
@@ -70,7 +70,7 @@ public abstract class MorphiaReference<T> {
      * @return the encoded vale
      * @morphia.internal
      */
-    public abstract Object encode(Mapper mapper, Object value, FieldModel optionalExtraInfo);
+    public abstract Object encode(Mapper mapper, Object value, PropertyModel optionalExtraInfo);
 
     /**
      * @return returns the referenced entity if it exists.  May return null.

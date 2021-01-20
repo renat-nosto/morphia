@@ -13,7 +13,7 @@ import dev.morphia.annotations.Id;
 import dev.morphia.annotations.Version;
 import dev.morphia.mapping.Mapper;
 import dev.morphia.mapping.codec.pojo.EntityModel;
-import dev.morphia.mapping.codec.pojo.FieldModel;
+import dev.morphia.mapping.codec.pojo.PropertyModel;
 import dev.morphia.mapping.validation.ConstraintViolationException;
 import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
@@ -319,7 +319,7 @@ public class TestVersioning extends TestBase {
 
     @Test
     public void testVersionFieldNameContribution() {
-        final FieldModel mappedFieldByJavaField = getMapper().getEntityModel(NamedVersion.class).getField("v");
+        final PropertyModel mappedFieldByJavaField = getMapper().getEntityModel(NamedVersion.class).getProperty("v");
         assertEquals(mappedFieldByJavaField.getMappedName(), "v");
     }
 

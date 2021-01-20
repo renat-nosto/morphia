@@ -4,7 +4,7 @@ import dev.morphia.annotations.experimental.Name;
 import dev.morphia.mapping.MappingException;
 import dev.morphia.mapping.codec.MorphiaInstanceCreator;
 import dev.morphia.mapping.codec.pojo.EntityModel;
-import dev.morphia.mapping.codec.pojo.FieldModel;
+import dev.morphia.mapping.codec.pojo.PropertyModel;
 import dev.morphia.sofia.Sofia;
 
 import java.lang.reflect.Constructor;
@@ -64,7 +64,7 @@ public class ConstructorCreator implements MorphiaInstanceCreator {
      */
     public static Constructor<?> getFullConstructor(EntityModel model) {
         for (Constructor<?> constructor : model.getType().getDeclaredConstructors()) {
-            if (constructor.getParameterCount() == model.getFields().size() && namesMatchFields(model, constructor)) {
+            if (constructor.getParameterCount() == model.getProperties().size() && namesMatchFields(model, constructor)) {
                 return constructor;
             }
         }
@@ -83,7 +83,7 @@ public class ConstructorCreator implements MorphiaInstanceCreator {
 
     private static boolean namesMatchFields(EntityModel model, Constructor<?> constructor) {
         for (Parameter parameter : constructor.getParameters()) {
-            if (model.getField(getParameterName(parameter)) == null) {
+            if (model.getProperty(getParameterName(parameter)) == null) {
                 return false;
             }
         }
@@ -101,7 +101,7 @@ public class ConstructorCreator implements MorphiaInstanceCreator {
     }
 
     @Override
-    public void set(Object value, FieldModel model) {
+    public void set(Object value, PropertyModel model) {
         positions.get(model.getName()).apply(parameters, value);
     }
 }

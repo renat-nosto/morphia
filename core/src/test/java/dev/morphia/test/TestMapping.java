@@ -10,10 +10,11 @@ import dev.morphia.annotations.experimental.EmbeddedBuilder;
 import dev.morphia.annotations.experimental.Name;
 import dev.morphia.mapping.Mapper;
 import dev.morphia.mapping.MapperOptions;
+import dev.morphia.mapping.MapperOptions.PropertyDiscovery;
 import dev.morphia.mapping.MappingException;
 import dev.morphia.mapping.NamingStrategy;
 import dev.morphia.mapping.codec.pojo.EntityModel;
-import dev.morphia.mapping.codec.pojo.FieldModel;
+import dev.morphia.mapping.codec.pojo.PropertyModel;
 import dev.morphia.mapping.experimental.MorphiaReference;
 import dev.morphia.mapping.lazy.proxy.ReferenceException;
 import dev.morphia.query.FindOptions;
@@ -71,6 +72,38 @@ public class TestMapping extends TestBase {
     }
 
     @Test
+    public void fieldNaming() {
+        MapperOptions options = MapperOptions.builder()
+                                             .fieldNaming(NamingStrategy.snakeCase())
+                                             .build();
+        Datastore datastore1 = Morphia.createDatastore(TestBase.TEST_DB_NAME, options);
+        List<EntityModel> map = datastore1.getMapper().map(ContainsMapWithEmbeddedInterface.class, ContainsIntegerList.class);
+
+        List<PropertyModel> fields = map.get(0).getProperties();
+        validateField(fields, "_id", "id");
+        validateField(fields, "embedded_values", "embeddedValues");
+
+        fields = map.get(1).getProperties();
+        validateField(fields, "_id", "id");
+        validateField(fields, "int_list", "intList");
+
+        options = MapperOptions.builder()
+                               .fieldNaming(NamingStrategy.kebabCase())
+                               .build();
+        final Datastore datastore2 = Morphia.createDatastore(TestBase.TEST_DB_NAME, options);
+        map = datastore2.getMapper().map(ContainsMapWithEmbeddedInterface.class, ContainsIntegerList.class);
+
+        fields = map.get(0).getProperties();
+        validateField(fields, "_id", "id");
+        validateField(fields, "embedded-values", "embeddedValues");
+
+        fields = map.get(1).getProperties();
+        validateField(fields, "_id", "id");
+        validateField(fields, "int-list", "intList");
+
+    }
+
+    @Test
     public void collectionNaming() {
         MapperOptions options = MapperOptions.builder()
                                              .collectionNaming(NamingStrategy.lowerCase())
@@ -106,35 +139,27 @@ public class TestMapping extends TestBase {
     }
 
     @Test
-    public void fieldNaming() {
-        MapperOptions options = MapperOptions.builder()
-                                             .fieldNaming(NamingStrategy.snakeCase())
-                                             .build();
-        Datastore datastore1 = Morphia.createDatastore(TestBase.TEST_DB_NAME, options);
-        List<EntityModel> map = datastore1.getMapper().map(ContainsMapWithEmbeddedInterface.class, ContainsIntegerList.class);
+    public void testBasicMapping() {
+        Mapper mapper = getDs().getMapper();
+        mapper.map(List.of(State.class, CityPopulation.class));
 
-        List<FieldModel> fields = map.get(0).getFields();
-        validateField(fields, "_id", "id");
-        validateField(fields, "embedded_values", "embeddedValues");
+        final State state = new State();
+        state.state = "NY";
+        state.biggest = new CityPopulation("NYC", 8336817L);
+        state.smallest = new CityPopulation("Red House", 38L);
 
-        fields = map.get(1).getFields();
-        validateField(fields, "_id", "id");
-        validateField(fields, "int_list", "intList");
+        getDs().save(state);
 
-        options = MapperOptions.builder()
-                               .fieldNaming(NamingStrategy.kebabCase())
-                               .build();
-        final Datastore datastore2 = Morphia.createDatastore(TestBase.TEST_DB_NAME, options);
-        map = datastore2.getMapper().map(ContainsMapWithEmbeddedInterface.class, ContainsIntegerList.class);
+        Query<State> query = getDs().find(State.class)
+                                    .filter(eq("_id", state.id));
+        State loaded = query.first();
 
-        fields = map.get(0).getFields();
-        validateField(fields, "_id", "id");
-        validateField(fields, "embedded-values", "embeddedValues");
+        assertEquals(loaded, state);
 
-        fields = map.get(1).getFields();
-        validateField(fields, "_id", "id");
-        validateField(fields, "int-list", "intList");
-
+        assertEquals(mapper.getEntityModel(State.class)
+                           .getProperties().stream()
+                           .map(PropertyModel::getMappedName)
+                           .collect(toList()), List.of("_id", "state", "biggestCity", "smallestCity"));
     }
 
     @Test
@@ -182,27 +207,13 @@ public class TestMapping extends TestBase {
     }
 
     @Test
-    public void testBasicMapping() {
-        Mapper mapper = getDs().getMapper();
-        mapper.map(List.of(State.class, CityPopulation.class));
+    public void testMethodMapping() {
+        reconfigure(MapperOptions.builder()
+                                 .propertyDiscovery(PropertyDiscovery.METHODS)
+                                 .build());
 
-        final State state = new State();
-        state.state = "NY";
-        state.biggest = new CityPopulation("NYC", 8336817L);
-        state.smallest = new CityPopulation("Red House", 38L);
-
-        getDs().save(state);
-
-        Query<State> query = getDs().find(State.class)
-                                    .filter(eq("_id", state.id));
-        State loaded = query.first();
-
-        assertEquals(loaded, state);
-
-        assertEquals(mapper.getEntityModel(State.class)
-                           .getFields().stream()
-                           .map(FieldModel::getMappedName)
-                           .collect(toList()), List.of("_id", "state", "biggestCity", "smallestCity"));
+        EntityModel model = getMapper().map(User.class).get(0);
+        assertEquals(model.getProperties().size(), 5);
     }
 
     @Test
@@ -671,7 +682,7 @@ public class TestMapping extends TestBase {
         assertEquals(query.first(), expected, query.toString());
     }
 
-    private void validateField(List<FieldModel> fields, String mapped, String java) {
+    private void validateField(List<PropertyModel> fields, String mapped, String java) {
         assertNotNull(fields.stream().filter(f -> f.getMappedName().equals(mapped)
                                                   && f.getName().equals(java)),
             mapped);

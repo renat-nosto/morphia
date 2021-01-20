@@ -6,6 +6,7 @@ import dev.morphia.annotations.Property;
 import dev.morphia.mapping.codec.MorphiaInstanceCreator;
 import dev.morphia.mapping.conventions.ConfigureProperties;
 import dev.morphia.mapping.conventions.FieldDiscovery;
+import dev.morphia.mapping.conventions.MethodDiscovery;
 import dev.morphia.mapping.conventions.MorphiaConvention;
 import dev.morphia.mapping.conventions.MorphiaDefaultsConvention;
 import dev.morphia.query.DefaultQueryFactory;
@@ -19,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static dev.morphia.mapping.MapperOptions.PropertyDiscovery.FIELDS;
 import static org.bson.UuidRepresentation.STANDARD;
 
 /**
@@ -46,22 +48,22 @@ public class MapperOptions {
     private ClassLoader classLoader;
 
     private MapperOptions(Builder builder) {
-        ignoreFinals = builder.ignoreFinals;
-        storeNulls = builder.storeNulls;
-        storeEmpties = builder.storeEmpties;
-        cacheClassLookups = builder.cacheClassLookups;
-        mapSubPackages = builder.mapSubPackages;
-        creator = builder.creator;
-        classLoader = builder.classLoader;
-        discriminatorKey = builder.discriminatorKey;
-        discriminator = builder.discriminator;
-        conventions = builder.conventions;
-        collectionNaming = builder.collectionNaming;
-        fieldNaming = builder.fieldNaming;
-        uuidRepresentation = builder.uuidRepresentation;
-        queryFactory = builder.queryFactory;
-        enablePolymorphicQueries = builder.enablePolymorphicQueries;
-        dateStorage = builder.dateStorage;
+        cacheClassLookups = builder.cacheClassLookups();
+        classLoader = builder.classLoader();
+        collectionNaming = builder.collectionNaming();
+        conventions = builder.conventions();
+        creator = builder.creator();
+        dateStorage = builder.dateStorage();
+        discriminator = builder.discriminator();
+        discriminatorKey = builder.discriminatorKey();
+        enablePolymorphicQueries = builder.enablePolymorphicQueries();
+        fieldNaming = builder.fieldNaming();
+        ignoreFinals = builder.ignoreFinals();
+        mapSubPackages = builder.mapSubPackages();
+        queryFactory = builder.queryFactory();
+        storeEmpties = builder.storeEmpties();
+        storeNulls = builder.storeNulls();
+        uuidRepresentation = builder.uuidRepresentation();
     }
 
     /**
@@ -222,16 +224,18 @@ public class MapperOptions {
         return storeNulls;
     }
 
+    public enum PropertyDiscovery {
+        FIELDS,
+        METHODS
+    }
+
     /**
      * A builder class for setting mapping options
      */
     @SuppressWarnings("unused")
     public static final class Builder {
 
-        private final List<MorphiaConvention> conventions = new ArrayList<>(List.of(
-            new MorphiaDefaultsConvention(),
-            new FieldDiscovery(),
-            new ConfigureProperties()));
+        private final List<MorphiaConvention> conventions = new ArrayList<>();
         private boolean ignoreFinals;
         private boolean storeNulls;
         private boolean storeEmpties;
@@ -247,8 +251,18 @@ public class MapperOptions {
         private NamingStrategy fieldNaming = NamingStrategy.identity();
         private UuidRepresentation uuidRepresentation = STANDARD;
         private QueryFactory queryFactory = new DefaultQueryFactory();
+        private PropertyDiscovery propertyDiscovery = FIELDS;
 
         private Builder() {
+        }
+
+        public Builder propertyDiscovery(PropertyDiscovery propertyDiscovery) {
+            this.propertyDiscovery = propertyDiscovery;
+            return this;
+        }
+
+        private boolean cacheClassLookups() {
+            return cacheClassLookups;
         }
 
         /**
@@ -287,6 +301,76 @@ public class MapperOptions {
         public Builder classLoader(ClassLoader classLoader) {
             this.classLoader = classLoader;
             return this;
+        }
+
+        private ClassLoader classLoader() {
+            return classLoader;
+        }
+
+        private NamingStrategy collectionNaming() {
+            return collectionNaming;
+        }
+
+        private List<MorphiaConvention> conventions() {
+            if (conventions.isEmpty()) {
+                return List.of(
+                    new MorphiaDefaultsConvention(),
+                    propertyDiscovery == FIELDS ? new FieldDiscovery() : new MethodDiscovery(),
+                    new ConfigureProperties());
+            }
+            return conventions;
+        }
+
+        private MorphiaInstanceCreator creator() {
+            return creator;
+        }
+
+        private DateStorage dateStorage() {
+            return dateStorage;
+        }
+
+        private DiscriminatorFunction discriminator() {
+            return discriminator;
+        }
+
+        private String discriminatorKey() {
+            return discriminatorKey;
+        }
+
+        private boolean enablePolymorphicQueries() {
+            return enablePolymorphicQueries;
+        }
+
+        private NamingStrategy fieldNaming() {
+            return fieldNaming;
+        }
+
+        private boolean ignoreFinals() {
+            return ignoreFinals;
+        }
+
+        private boolean mapSubPackages() {
+            return mapSubPackages;
+        }
+
+        private PropertyDiscovery propertyDiscovery() {
+            return propertyDiscovery;
+        }
+
+        private QueryFactory queryFactory() {
+            return queryFactory;
+        }
+
+        private boolean storeEmpties() {
+            return storeEmpties;
+        }
+
+        private boolean storeNulls() {
+            return storeNulls;
+        }
+
+        private UuidRepresentation uuidRepresentation() {
+            return uuidRepresentation;
         }
 
         /**

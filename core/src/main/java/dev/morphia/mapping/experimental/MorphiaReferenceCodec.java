@@ -5,7 +5,7 @@ import dev.morphia.mapping.Mapper;
 import dev.morphia.mapping.codec.DocumentWriter;
 import dev.morphia.mapping.codec.PropertyCodec;
 import dev.morphia.mapping.codec.pojo.PropertyHandler;
-import dev.morphia.mapping.codec.pojo.TypeData;
+import dev.morphia.mapping.codec.pojo.PropertyModel;
 import dev.morphia.mapping.lazy.proxy.ReferenceException;
 import dev.morphia.sofia.Sofia;
 import org.bson.BsonReader;
@@ -15,7 +15,6 @@ import org.bson.codecs.Codec;
 import org.bson.codecs.DecoderContext;
 import org.bson.codecs.EncoderContext;
 
-import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -38,10 +37,9 @@ public class MorphiaReferenceCodec extends PropertyCodec<MorphiaReference> imple
      *
      * @param datastore the datastore
      * @param field     the reference field
-     * @param typeData  the field type data
      */
-    public MorphiaReferenceCodec(Datastore datastore, Field field, TypeData typeData) {
-        super(datastore, field, (TypeData) typeData.getTypeParameters().get(0));
+    public MorphiaReferenceCodec(Datastore datastore, PropertyModel propertyModel) {
+        super(datastore, propertyModel);
         mapper = datastore.getMapper();
     }
 
