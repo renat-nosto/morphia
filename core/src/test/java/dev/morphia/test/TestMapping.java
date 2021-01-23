@@ -1,7 +1,6 @@
 package dev.morphia.test;
 
 import dev.morphia.Datastore;
-import dev.morphia.Morphia;
 import dev.morphia.annotations.AlsoLoad;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
@@ -50,6 +49,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.StringJoiner;
 
+import static dev.morphia.Morphia.createDatastore;
 import static dev.morphia.query.experimental.filters.Filters.eq;
 import static dev.morphia.query.experimental.filters.Filters.exists;
 import static java.util.stream.Collectors.toList;
@@ -72,11 +72,32 @@ public class TestMapping extends TestBase {
     }
 
     @Test
+    public void collectionNaming() {
+        MapperOptions options = MapperOptions.builder()
+                                             .collectionNaming(NamingStrategy.lowerCase())
+                                             .build();
+        Datastore datastore = createDatastore(TestBase.TEST_DB_NAME, options);
+        List<EntityModel> map = datastore.getMapper().map(ContainsMapWithEmbeddedInterface.class, ContainsIntegerList.class);
+
+        assertEquals(map.get(0).getCollectionName(), "containsmapwithembeddedinterface");
+        assertEquals(map.get(1).getCollectionName(), "cil");
+
+        options = MapperOptions.builder()
+                               .collectionNaming(NamingStrategy.kebabCase())
+                               .build();
+        datastore = createDatastore(TestBase.TEST_DB_NAME, options);
+        map = datastore.getMapper().map(ContainsMapWithEmbeddedInterface.class, ContainsIntegerList.class);
+
+        assertEquals(map.get(0).getCollectionName(), "contains-map-with-embedded-interface");
+        assertEquals(map.get(1).getCollectionName(), "cil");
+    }
+
+    @Test
     public void fieldNaming() {
         MapperOptions options = MapperOptions.builder()
                                              .fieldNaming(NamingStrategy.snakeCase())
                                              .build();
-        Datastore datastore1 = Morphia.createDatastore(TestBase.TEST_DB_NAME, options);
+        Datastore datastore1 = createDatastore(TestBase.TEST_DB_NAME, options);
         List<EntityModel> map = datastore1.getMapper().map(ContainsMapWithEmbeddedInterface.class, ContainsIntegerList.class);
 
         List<PropertyModel> fields = map.get(0).getProperties();
@@ -90,7 +111,7 @@ public class TestMapping extends TestBase {
         options = MapperOptions.builder()
                                .fieldNaming(NamingStrategy.kebabCase())
                                .build();
-        final Datastore datastore2 = Morphia.createDatastore(TestBase.TEST_DB_NAME, options);
+        final Datastore datastore2 = createDatastore(TestBase.TEST_DB_NAME, options);
         map = datastore2.getMapper().map(ContainsMapWithEmbeddedInterface.class, ContainsIntegerList.class);
 
         fields = map.get(0).getProperties();
@@ -101,27 +122,6 @@ public class TestMapping extends TestBase {
         validateField(fields, "_id", "id");
         validateField(fields, "int-list", "intList");
 
-    }
-
-    @Test
-    public void collectionNaming() {
-        MapperOptions options = MapperOptions.builder()
-                                             .collectionNaming(NamingStrategy.lowerCase())
-                                             .build();
-        Datastore datastore = Morphia.createDatastore(TestBase.TEST_DB_NAME, options);
-        List<EntityModel> map = datastore.getMapper().map(ContainsMapWithEmbeddedInterface.class, ContainsIntegerList.class);
-
-        assertEquals(map.get(0).getCollectionName(), "containsmapwithembeddedinterface");
-        assertEquals(map.get(1).getCollectionName(), "cil");
-
-        options = MapperOptions.builder()
-                               .collectionNaming(NamingStrategy.kebabCase())
-                               .build();
-        datastore = Morphia.createDatastore(TestBase.TEST_DB_NAME, options);
-        map = datastore.getMapper().map(ContainsMapWithEmbeddedInterface.class, ContainsIntegerList.class);
-
-        assertEquals(map.get(0).getCollectionName(), "contains-map-with-embedded-interface");
-        assertEquals(map.get(1).getCollectionName(), "cil");
     }
 
     @Test
@@ -206,14 +206,29 @@ public class TestMapping extends TestBase {
         });
     }
 
-    @Test
-    public void testMethodMapping() {
-        reconfigure(MapperOptions.builder()
-                                 .propertyDiscovery(PropertyDiscovery.METHODS)
-                                 .build());
+    @Test(dataProvider = "queryFactories")
+    public void testFieldAsDiscriminator(QueryFactory queryFactory) {
+        Datastore datastore = createDatastore(getMongoClient(), getDatabase().getName(),
+            MapperOptions.builder()
+                         .queryFactory(queryFactory)
+                         .enablePolymorphicQueries(true)
+                         .build());
 
-        EntityModel model = getMapper().map(User.class).get(0);
-        assertEquals(model.getProperties().size(), 5);
+        datastore.getMapper().map(BlogImage.class, Png.class, Jpg.class);
+
+        BlogImage png = new Png();
+        png.content = "I'm a png";
+        datastore.save(png);
+
+        BlogImage jpg = new Jpg();
+        jpg.content = "I'm a jpg";
+        datastore.save(jpg);
+
+        findFirst(datastore, Png.class, png);
+        findFirst(datastore, Jpg.class, jpg);
+        Query<BlogImage> query = datastore.find(BlogImage.class);
+        assertEquals(query.count(), 2, query.toString());
+        assertListEquals(query.iterator().toList(), List.of(jpg, png));
     }
 
     @Test
@@ -320,29 +335,21 @@ public class TestMapping extends TestBase {
         assertEquals(first, holdsUnannotated);
     }
 
-    @Test(dataProvider = "queryFactories")
-    public void testFieldAsDiscriminator(QueryFactory queryFactory) {
-        Datastore datastore = Morphia.createDatastore(getMongoClient(), getDatabase().getName(),
-            MapperOptions.builder()
-                         .queryFactory(queryFactory)
-                         .enablePolymorphicQueries(true)
-                         .build());
+    @Test
+    public void testFinalFieldNotPersisted() {
+        MapperOptions options = MapperOptions.builder(getMapper().getOptions())
+                                             .ignoreFinals(true)
+                                             .build();
+        final Datastore datastore = createDatastore(getMongoClient(), getDatabase().getName(), options);
 
-        datastore.getMapper().map(BlogImage.class, Png.class, Jpg.class);
-
-        BlogImage png = new Png();
-        png.content = "I'm a png";
-        datastore.save(png);
-
-        BlogImage jpg = new Jpg();
-        jpg.content = "I'm a jpg";
-        datastore.save(jpg);
-
-        findFirst(datastore, Png.class, png);
-        findFirst(datastore, Jpg.class, jpg);
-        Query<BlogImage> query = datastore.find(BlogImage.class);
-        assertEquals(query.count(), 2, query.toString());
-        assertListEquals(query.iterator().toList(), List.of(jpg, png));
+        getMapper().map(ContainsFinalField.class);
+        final ObjectId savedKey = datastore.save(new ContainsFinalField("blah")).id;
+        final ContainsFinalField loaded = datastore.find(ContainsFinalField.class)
+                                                   .filter(eq("_id", savedKey))
+                                                   .first();
+        assertNotNull(loaded);
+        assertNotNull(loaded.name);
+        assertEquals(loaded.name, "foo");
     }
 
     @Test
@@ -358,20 +365,16 @@ public class TestMapping extends TestBase {
     }
 
     @Test
-    public void testFinalFieldNotPersisted() {
-        MapperOptions options = MapperOptions.builder(getMapper().getOptions())
-                                             .ignoreFinals(true)
-                                             .build();
-        final Datastore datastore = Morphia.createDatastore(getMongoClient(), getDatabase().getName(), options);
 
-        getMapper().map(ContainsFinalField.class);
-        final ObjectId savedKey = datastore.save(new ContainsFinalField("blah")).id;
-        final ContainsFinalField loaded = datastore.find(ContainsFinalField.class)
-                                                   .filter(eq("_id", savedKey))
-                                                   .first();
-        assertNotNull(loaded);
-        assertNotNull(loaded.name);
-        assertEquals(loaded.name, "foo");
+    public void testMethodMapping() {
+        Datastore datastore = createDatastore(getMongoClient(), TEST_DB_NAME,
+            MapperOptions.builder()
+                         .propertyDiscovery(
+                             PropertyDiscovery.METHODS)
+                         .build());
+
+        EntityModel model = datastore.getMapper().map(User.class).get(0);
+        assertEquals(model.getProperties().size(), 5);
     }
 
     @Test

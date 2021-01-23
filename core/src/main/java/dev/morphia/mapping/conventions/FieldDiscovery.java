@@ -61,6 +61,7 @@ public class FieldDiscovery implements MorphiaConvention {
                     .typeData(getTypeData(parameterization, type, field))
                     .annotations(List.of(field.getDeclaredAnnotations()))
                     .accessor(getAccessor(field, propertyModelBuilder))
+                    .modifiers(field.getModifiers())
                     .mappedName(getMappedFieldName(datastore.getMapper().getOptions(), propertyModelBuilder));
             }
         }
