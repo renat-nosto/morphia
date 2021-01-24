@@ -1,19 +1,17 @@
 package dev.morphia.mapping.codec;
 
 import dev.morphia.mapping.MappingException;
+import org.bson.codecs.pojo.PropertyAccessor;
 
 import java.lang.reflect.Method;
 
-public class PropertyAccessor implements org.bson.codecs.pojo.PropertyAccessor<Object> {
+public class MethodAccessor implements PropertyAccessor<Object> {
     private final Method getter;
     private final Method setter;
 
-    public PropertyAccessor(Method getter, Method setter) {
+    public MethodAccessor(Method getter, Method setter) {
         this.getter = getter;
         this.setter = setter;
-
-        getter.setAccessible(true);
-        setter.setAccessible(true);
     }
 
     @Override

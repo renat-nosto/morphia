@@ -89,12 +89,23 @@ public class EntityModelBuilder {
         annotations.addAll(temp);
     }
 
-    public Set<Class<?>> classHierarchy() {
-        return classes;
+    /**
+     * Adds a property to the model
+     *
+     * @return the new PropertyModelBuilder
+     */
+    public PropertyModelBuilder addProperty() {
+        PropertyModelBuilder builder = PropertyModel.builder(datastore);
+        propertyModels.add(builder);
+        return builder;
     }
 
-    public Map<String, Map<String, Type>> parameterization() {
-        return parameterization;
+    /**
+     * @return the parent class hierarchy
+     * @since 2.2
+     */
+    public Set<Class<?>> classHierarchy() {
+        return classes;
     }
 
     private Map<String, Map<String, Type>> findParameterization(Class<?> type) {
@@ -134,12 +145,12 @@ public class EntityModelBuilder {
     }
 
     /**
-     * Adds a property to the model
+     * @return the type parameterization mapped to the type that declares it
+     * @see #classHierarchy()
+     * @since 2.2
      */
-    public PropertyModelBuilder addProperty() {
-        PropertyModelBuilder builder = PropertyModel.builder(datastore);
-        propertyModels.add(builder);
-        return builder;
+    public Map<String, Map<String, Type>> parameterization() {
+        return parameterization;
     }
 
     /**

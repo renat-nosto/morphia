@@ -1,7 +1,7 @@
 package dev.morphia.mapping.conventions;
 
 import dev.morphia.Datastore;
-import dev.morphia.mapping.codec.PropertyAccessor;
+import dev.morphia.mapping.codec.MethodAccessor;
 import dev.morphia.mapping.codec.pojo.EntityModelBuilder;
 import dev.morphia.mapping.codec.pojo.PropertyModelBuilder;
 import dev.morphia.mapping.codec.pojo.TypeData;
@@ -38,8 +38,9 @@ public class MethodDiscovery implements MorphiaConvention {
     private void processMethods(Class<?> type, Map<String, Map<String, Type>> parameterization) {
 
         Map<String, List<Method>> properties = Arrays.stream(type.getDeclaredMethods())
-                                                     .filter(m -> m.getName().startsWith("get") || m.getName().startsWith("set") ||
-                                                                  m.getName().startsWith("is"))
+                                                     .filter(m -> m.getName().startsWith("get")
+                                                                  || m.getName().startsWith("set")
+                                                                  || m.getName().startsWith("is"))
                                                      .collect(Collectors.groupingBy(m -> m.getName().startsWith("get")
                                                                                          || m.getName().startsWith("set")
                                                                                          ? stripPrefix(m, 3)
@@ -62,7 +63,7 @@ public class MethodDiscovery implements MorphiaConvention {
 
                 PropertyModelBuilder builder = entityModelBuilder.addProperty();
                 builder.name(name)
-                       .accessor(new PropertyAccessor(getter, setter))
+                       .accessor(new MethodAccessor(getter, setter))
                        .annotations(List.of(getter.getDeclaredAnnotations()))
                        .typeData(typeData)
                        .mappedName(getMappedFieldName(datastore.getMapper().getOptions(), builder));
@@ -71,32 +72,6 @@ public class MethodDiscovery implements MorphiaConvention {
                 }
             }
         }
-
-/*
-        for (Method method : type.getDeclaredMethods()) {
-
-            Type genericType = method.getGenericType();
-            if (genericType instanceof TypeVariable) {
-                Map<String, Type> properties = parameterization.get(currentClass.getName());
-                if (properties != null) {
-                    Type mapped = properties.get(((TypeVariable<?>) genericType).getName());
-                    if (mapped instanceof Class) {
-                        typeData = TypeData.newInstance(method.getGenericType(), (Class<?>) mapped);
-                    }
-                }
-            }
-
-            FieldModelBuilder fieldModelBuilder = FieldModel.builder()
-                                                            .field(method)
-                                                            .fieldName(method.getName())
-                                                            .typeData(typeData)
-                                                            .annotations(List.of(method.getDeclaredAnnotations()));
-            fieldModelBuilder.mappedName(getMappedFieldName(fieldModelBuilder));
-
-            entityModelBuilder.addModel(fieldModelBuilder);
-        }
-*/
-
     }
 
     private String stripPrefix(Method method, int size) {

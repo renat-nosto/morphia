@@ -36,8 +36,8 @@ public class MorphiaReferenceCodec extends PropertyCodec<MorphiaReference> imple
     /**
      * Creates a codec
      *
-     * @param datastore the datastore
-     * @param field     the reference field
+     * @param datastore     the datastore
+     * @param propertyModel the reference property model
      */
     public MorphiaReferenceCodec(Datastore datastore, PropertyModel propertyModel) {
         super(datastore, propertyModel);

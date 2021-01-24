@@ -119,7 +119,7 @@ public abstract class MorphiaReference<T> {
      * @param ignoreMissing ignore any missing referenced documents
      * @return this
      */
-    public MorphiaReference ignoreMissing(boolean ignoreMissing) {
+    public MorphiaReference<T> ignoreMissing(boolean ignoreMissing) {
         this.ignoreMissing = ignoreMissing;
         return this;
     }
