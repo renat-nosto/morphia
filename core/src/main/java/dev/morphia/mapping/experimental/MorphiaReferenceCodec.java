@@ -6,6 +6,7 @@ import dev.morphia.mapping.codec.DocumentWriter;
 import dev.morphia.mapping.codec.PropertyCodec;
 import dev.morphia.mapping.codec.pojo.PropertyHandler;
 import dev.morphia.mapping.codec.pojo.PropertyModel;
+import dev.morphia.mapping.codec.pojo.TypeData;
 import dev.morphia.mapping.lazy.proxy.ReferenceException;
 import dev.morphia.sofia.Sofia;
 import org.bson.BsonReader;
@@ -50,11 +51,12 @@ public class MorphiaReferenceCodec extends PropertyCodec<MorphiaReference> imple
                              .get(bsonTypeClassMap.get(reader.getCurrentBsonType()))
                              .decode(reader, decoderContext);
         value = processId(value, mapper, decoderContext);
-        if (Set.class.isAssignableFrom(getTypeData().getType())) {
+        TypeData typeData = (TypeData) getTypeData().getTypeParameters().get(0);
+        if (Set.class.isAssignableFrom(typeData.getType())) {
             return new SetReference<>(getDatastore(), getEntityModelForField(), (List) value);
-        } else if (Collection.class.isAssignableFrom(getTypeData().getType())) {
+        } else if (Collection.class.isAssignableFrom(typeData.getType())) {
             return new ListReference<>(getDatastore(), getEntityModelForField(), (List) value);
-        } else if (Map.class.isAssignableFrom(getTypeData().getType())) {
+        } else if (Map.class.isAssignableFrom(typeData.getType())) {
             return new MapReference<>(getDatastore(), (Map) value, getEntityModelForField());
         } else {
             return new SingleReference<>(getDatastore(), getEntityModelForField(), value);
