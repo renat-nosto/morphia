@@ -25,6 +25,7 @@ import dev.morphia.test.models.BlogImage;
 import dev.morphia.test.models.Book;
 import dev.morphia.test.models.CityPopulation;
 import dev.morphia.test.models.Jpg;
+import dev.morphia.test.models.MethodMappedUser;
 import dev.morphia.test.models.Png;
 import dev.morphia.test.models.State;
 import dev.morphia.test.models.User;
@@ -93,6 +94,20 @@ public class TestMapping extends TestBase {
     }
 
     @Test
+    public void constructors() {
+        getDs().getMapper().map(ConstructorBased.class);
+
+        ContainsFinalField value = new ContainsFinalField();
+        ConstructorBased instance = new ConstructorBased(new ObjectId(), "test instance", MorphiaReference.wrap(value));
+
+        getDs().save(List.of(value, instance));
+
+        ConstructorBased first = getDs().find(ConstructorBased.class).first();
+        assertNotNull(first);
+        assertEquals(instance, first);
+    }
+
+    @Test
     public void fieldNaming() {
         MapperOptions options = MapperOptions.builder()
                                              .fieldNaming(NamingStrategy.snakeCase())
@@ -122,44 +137,6 @@ public class TestMapping extends TestBase {
         validateField(fields, "_id", "id");
         validateField(fields, "int-list", "intList");
 
-    }
-
-    @Test
-    public void constructors() {
-        getDs().getMapper().map(ConstructorBased.class);
-
-        ContainsFinalField value = new ContainsFinalField();
-        ConstructorBased instance = new ConstructorBased(new ObjectId(), "test instance", MorphiaReference.wrap(value));
-
-        getDs().save(List.of(value, instance));
-
-        ConstructorBased first = getDs().find(ConstructorBased.class).first();
-        assertNotNull(first);
-        assertEquals(instance, first);
-    }
-
-    @Test
-    public void testBasicMapping() {
-        Mapper mapper = getDs().getMapper();
-        mapper.map(List.of(State.class, CityPopulation.class));
-
-        final State state = new State();
-        state.state = "NY";
-        state.biggest = new CityPopulation("NYC", 8336817L);
-        state.smallest = new CityPopulation("Red House", 38L);
-
-        getDs().save(state);
-
-        Query<State> query = getDs().find(State.class)
-                                    .filter(eq("_id", state.id));
-        State loaded = query.first();
-
-        assertEquals(loaded, state);
-
-        assertEquals(mapper.getEntityModel(State.class)
-                           .getProperties().stream()
-                           .map(PropertyModel::getMappedName)
-                           .collect(toList()), List.of("_id", "state", "biggestCity", "smallestCity"));
     }
 
     @Test
@@ -206,29 +183,28 @@ public class TestMapping extends TestBase {
         });
     }
 
-    @Test(dataProvider = "queryFactories")
-    public void testFieldAsDiscriminator(QueryFactory queryFactory) {
-        Datastore datastore = createDatastore(getMongoClient(), getDatabase().getName(),
-            MapperOptions.builder()
-                         .queryFactory(queryFactory)
-                         .enablePolymorphicQueries(true)
-                         .build());
+    @Test
+    public void testBasicMapping() {
+        Mapper mapper = getDs().getMapper();
+        mapper.map(List.of(State.class, CityPopulation.class));
 
-        datastore.getMapper().map(BlogImage.class, Png.class, Jpg.class);
+        final State state = new State();
+        state.state = "NY";
+        state.biggest = new CityPopulation("NYC", 8336817L);
+        state.smallest = new CityPopulation("Red House", 38L);
 
-        BlogImage png = new Png();
-        png.content = "I'm a png";
-        datastore.save(png);
+        getDs().save(state);
 
-        BlogImage jpg = new Jpg();
-        jpg.content = "I'm a jpg";
-        datastore.save(jpg);
+        Query<State> query = getDs().find(State.class)
+                                    .filter(eq("_id", state.id));
+        State loaded = query.first();
 
-        findFirst(datastore, Png.class, png);
-        findFirst(datastore, Jpg.class, jpg);
-        Query<BlogImage> query = datastore.find(BlogImage.class);
-        assertEquals(query.count(), 2, query.toString());
-        assertListEquals(query.iterator().toList(), List.of(jpg, png));
+        assertEquals(loaded, state);
+
+        assertEquals(mapper.getEntityModel(State.class)
+                           .getProperties().stream()
+                           .map(PropertyModel::getMappedName)
+                           .collect(toList()), List.of("_id", "state", "biggestCity", "smallestCity"));
     }
 
     @Test
@@ -335,21 +311,29 @@ public class TestMapping extends TestBase {
         assertEquals(first, holdsUnannotated);
     }
 
-    @Test
-    public void testFinalFieldNotPersisted() {
-        MapperOptions options = MapperOptions.builder(getMapper().getOptions())
-                                             .ignoreFinals(true)
-                                             .build();
-        final Datastore datastore = createDatastore(getMongoClient(), getDatabase().getName(), options);
+    @Test(dataProvider = "queryFactories")
+    public void testFieldAsDiscriminator(QueryFactory queryFactory) {
+        Datastore datastore = createDatastore(getMongoClient(), getDatabase().getName(),
+            MapperOptions.builder()
+                         .queryFactory(queryFactory)
+                         .enablePolymorphicQueries(true)
+                         .build());
 
-        getMapper().map(ContainsFinalField.class);
-        final ObjectId savedKey = datastore.save(new ContainsFinalField("blah")).id;
-        final ContainsFinalField loaded = datastore.find(ContainsFinalField.class)
-                                                   .filter(eq("_id", savedKey))
-                                                   .first();
-        assertNotNull(loaded);
-        assertNotNull(loaded.name);
-        assertEquals(loaded.name, "foo");
+        datastore.getMapper().map(BlogImage.class, Png.class, Jpg.class);
+
+        BlogImage png = new Png();
+        png.content = "I'm a png";
+        datastore.save(png);
+
+        BlogImage jpg = new Jpg();
+        jpg.content = "I'm a jpg";
+        datastore.save(jpg);
+
+        findFirst(datastore, Png.class, png);
+        findFirst(datastore, Jpg.class, jpg);
+        Query<BlogImage> query = datastore.find(BlogImage.class);
+        assertEquals(query.count(), 2, query.toString());
+        assertListEquals(query.iterator().toList(), List.of(jpg, png));
     }
 
     @Test
@@ -365,16 +349,20 @@ public class TestMapping extends TestBase {
     }
 
     @Test
+    public void testFinalFieldNotPersisted() {
+        MapperOptions options = MapperOptions.builder(getMapper().getOptions())
+                                             .ignoreFinals(true)
+                                             .build();
+        final Datastore datastore = createDatastore(getMongoClient(), getDatabase().getName(), options);
 
-    public void testMethodMapping() {
-        Datastore datastore = createDatastore(getMongoClient(), TEST_DB_NAME,
-            MapperOptions.builder()
-                         .propertyDiscovery(
-                             PropertyDiscovery.METHODS)
-                         .build());
-
-        EntityModel model = datastore.getMapper().map(User.class).get(0);
-        assertEquals(model.getProperties().size(), 5);
+        getMapper().map(ContainsFinalField.class);
+        final ObjectId savedKey = datastore.save(new ContainsFinalField("blah")).id;
+        final ContainsFinalField loaded = datastore.find(ContainsFinalField.class)
+                                                   .filter(eq("_id", savedKey))
+                                                   .first();
+        assertNotNull(loaded);
+        assertNotNull(loaded.name);
+        assertEquals(loaded.name, "foo");
     }
 
     @Test
@@ -574,6 +562,24 @@ public class TestMapping extends TestBase {
     }
 
     @Test
+
+    public void testMethodMapping() {
+        Datastore datastore = createDatastore(getMongoClient(), TEST_DB_NAME,
+            MapperOptions.builder()
+                         .propertyDiscovery(
+                             PropertyDiscovery.METHODS)
+                         .build());
+
+        EntityModel model = datastore.getMapper().map(MethodMappedUser.class).get(0);
+        assertTrue(model.getProperties().size() > 0);
+        assertNotNull(model.getVersionProperty(), model.getProperties().toString());
+        assertNotNull(model.getProperty("dateJoined"));
+        assertNotNull(model.getProperty("joined"));
+        assertNotNull(model.getProperty("friend_reference"));
+        assertNotNull(model.getProperty("morphia_reference"));
+    }
+
+    @Test
     public void testObjectIdKeyedMap() {
         getMapper().map(ContainsObjectIdKeyMap.class);
         final ContainsObjectIdKeyMap map = new ContainsObjectIdKeyMap();
@@ -701,7 +707,7 @@ public class TestMapping extends TestBase {
     }
 
     @Entity
-    public abstract static class BaseEntity {
+    private abstract static class BaseEntity {
         @Id
         private ObjectId id;
 
@@ -715,7 +721,7 @@ public class TestMapping extends TestBase {
     }
 
     @Entity
-    public static class ConstructorBased {
+    private static class ConstructorBased {
         @Id
         private final ObjectId id;
         private final String name;
@@ -905,7 +911,7 @@ public class TestMapping extends TestBase {
     }
 
     @Entity("generic_arrays")
-    static class MyEntity {
+    private static class MyEntity {
         @Id
         private String id;
         private Integer[] integers;
@@ -913,7 +919,7 @@ public class TestMapping extends TestBase {
     }
 
     @Entity(value = "Normal", useDiscriminator = false)
-    static class Normal {
+    private static class Normal {
         @Id
         private final ObjectId id = new ObjectId();
         private String name;

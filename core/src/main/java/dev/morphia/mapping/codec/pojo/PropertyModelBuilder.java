@@ -47,7 +47,6 @@ public final class PropertyModelBuilder {
     private String name;
     private TypeData<?> typeData;
     private PropertySerialization<? super Object> serialization;
-    private EntityModel propertyEntityModel;
 
     PropertyModelBuilder(Datastore datastore) {
         this.datastore = datastore;
@@ -231,20 +230,6 @@ public final class PropertyModelBuilder {
      */
     public EntityModel owner() {
         return owner;
-    }
-
-    /**
-     * Returns the entity model for this model's type.  Might be null if the property type is not a mapped type.
-     *
-     * @return the EntityModel or null
-     * @since 2.2
-     */
-    public EntityModel propertyEntityModel() {
-        return propertyEntityModel;
-    }
-
-    public void propertyEntityModel(EntityModel entityModel) {
-        propertyEntityModel = entityModel;
     }
 
     /**

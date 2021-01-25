@@ -12,12 +12,15 @@ import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
 import dev.morphia.annotations.Version;
 import dev.morphia.mapping.Mapper;
+import dev.morphia.mapping.MapperOptions;
+import dev.morphia.mapping.MapperOptions.PropertyDiscovery;
 import dev.morphia.mapping.codec.pojo.EntityModel;
 import dev.morphia.mapping.codec.pojo.PropertyModel;
 import dev.morphia.mapping.validation.ConstraintViolationException;
 import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
+import dev.morphia.test.models.MethodMappedUser;
 import dev.morphia.test.models.TestEntity;
 import dev.morphia.test.models.versioned.AbstractVersionedBase;
 import dev.morphia.test.models.versioned.Versioned;
@@ -30,6 +33,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import static dev.morphia.Morphia.createDatastore;
 import static dev.morphia.query.experimental.filters.Filters.eq;
 import static dev.morphia.query.experimental.updates.UpdateOperators.inc;
 import static dev.morphia.query.experimental.updates.UpdateOperators.set;
@@ -42,6 +46,22 @@ import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
 
 public class TestVersioning extends TestBase {
+    @Test
+    public void testMethodMapping() {
+        Datastore datastore = createDatastore(getMongoClient(), TEST_DB_NAME,
+            MapperOptions.builder()
+                         .propertyDiscovery(
+                             PropertyDiscovery.METHODS)
+                         .build());
+
+        datastore.getMapper().map(MethodMappedUser.class);
+
+        MethodMappedUser user = new MethodMappedUser();
+        assertEquals(user.getVersion(), null);
+        datastore.save(user);
+        assertEquals(user.getVersion(), Long.valueOf(1L));
+    }
+
     @Test
     public void testBulkUpdate() {
         final Datastore datastore = getDs();

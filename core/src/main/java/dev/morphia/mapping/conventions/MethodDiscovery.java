@@ -6,6 +6,7 @@ import dev.morphia.mapping.codec.pojo.EntityModelBuilder;
 import dev.morphia.mapping.codec.pojo.PropertyModelBuilder;
 import dev.morphia.mapping.codec.pojo.TypeData;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -33,6 +34,13 @@ public class MethodDiscovery implements MorphiaConvention {
             processMethods(type, parameterization);
         }
 
+    }
+
+    private List<Annotation> discoverAnnotations(Method getter, Method setter) {
+        List<Annotation> collect = List.of(getter, setter).stream()
+                                       .flatMap(m -> Arrays.stream(m.getDeclaredAnnotations()))
+                                       .collect(Collectors.toList());
+        return collect;
     }
 
     private void processMethods(Class<?> type, Map<String, Map<String, Type>> parameterization) {
@@ -64,12 +72,9 @@ public class MethodDiscovery implements MorphiaConvention {
                 PropertyModelBuilder builder = entityModelBuilder.addProperty();
                 builder.name(name)
                        .accessor(new MethodAccessor(getter, setter))
-                       .annotations(List.of(getter.getDeclaredAnnotations()))
+                       .annotations(discoverAnnotations(getter, setter))
                        .typeData(typeData)
                        .mappedName(getMappedFieldName(datastore.getMapper().getOptions(), builder));
-                if (datastore.getMapper().isMappable(typeData.getType())) {
-                    builder.propertyEntityModel(datastore.getMapper().getEntityModel(typeData.getType()));
-                }
             }
         }
     }

@@ -8,10 +8,15 @@ import dev.morphia.annotations.Embedded;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
 import dev.morphia.annotations.Reference;
+import dev.morphia.mapping.MapperOptions;
+import dev.morphia.mapping.MapperOptions.PropertyDiscovery;
+import dev.morphia.mapping.experimental.MorphiaReference;
 import dev.morphia.test.TestBase;
 import dev.morphia.test.models.Author;
 import dev.morphia.test.models.Book;
 import dev.morphia.test.models.FacebookUser;
+import dev.morphia.test.models.MethodMappedFriend;
+import dev.morphia.test.models.MethodMappedUser;
 import org.bson.BsonDocument;
 import org.bson.Document;
 import org.bson.types.ObjectId;
@@ -28,10 +33,34 @@ import static dev.morphia.Morphia.createDatastore;
 import static dev.morphia.aggregation.experimental.stages.Unwind.on;
 import static dev.morphia.query.experimental.filters.Filters.eq;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
 
 public class TestReferences extends TestBase {
+    @Test
+    public void testMethodMapping() {
+        Datastore datastore = createDatastore(getMongoClient(), TEST_DB_NAME,
+            MapperOptions.builder()
+                         .propertyDiscovery(
+                             PropertyDiscovery.METHODS)
+                         .build());
+
+        datastore.getMapper().map(MethodMappedUser.class);
+        MethodMappedUser user = new MethodMappedUser();
+        MethodMappedFriend friend = new MethodMappedFriend();
+        user.setFriend(friend);
+        user.setFriends(MorphiaReference.wrap(List.of(friend)));
+
+        datastore.save(List.of(friend, user));
+
+        MethodMappedUser loaded = datastore.find(MethodMappedUser.class).first();
+        assertFalse(loaded.getFriends().isResolved());
+        assertEquals(loaded.getFriend(), friend);
+        assertEquals(loaded.getFriends().get().get(0), friend);
+        assertEquals(loaded, user);
+    }
+
     @Test
     public void testAggregationLookups() {
         final Author author = new Author("Jane Austen");
