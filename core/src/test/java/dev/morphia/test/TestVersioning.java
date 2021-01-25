@@ -47,22 +47,6 @@ import static org.testng.Assert.assertTrue;
 
 public class TestVersioning extends TestBase {
     @Test
-    public void testMethodMapping() {
-        Datastore datastore = createDatastore(getMongoClient(), TEST_DB_NAME,
-            MapperOptions.builder()
-                         .propertyDiscovery(
-                             PropertyDiscovery.METHODS)
-                         .build());
-
-        datastore.getMapper().map(MethodMappedUser.class);
-
-        MethodMappedUser user = new MethodMappedUser();
-        assertEquals(user.getVersion(), null);
-        datastore.save(user);
-        assertEquals(user.getVersion(), Long.valueOf(1L));
-    }
-
-    @Test
     public void testBulkUpdate() {
         final Datastore datastore = getDs();
 
@@ -249,6 +233,22 @@ public class TestVersioning extends TestBase {
 
             getDs().merge(a);
         });
+    }
+
+    @Test
+    public void testMethodMapping() {
+        Datastore datastore = createDatastore(getMongoClient(), TEST_DB_NAME,
+            MapperOptions.builder()
+                         .propertyDiscovery(
+                             PropertyDiscovery.METHODS)
+                         .build());
+
+        datastore.getMapper().map(MethodMappedUser.class);
+
+        MethodMappedUser user = new MethodMappedUser();
+        assertEquals(user.getVersion(), null);
+        datastore.save(user);
+        assertEquals(user.getVersion(), Long.valueOf(1L));
     }
 
     @Test

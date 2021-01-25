@@ -39,29 +39,6 @@ import static org.testng.Assert.assertNull;
 
 public class TestReferences extends TestBase {
     @Test
-    public void testMethodMapping() {
-        Datastore datastore = createDatastore(getMongoClient(), TEST_DB_NAME,
-            MapperOptions.builder()
-                         .propertyDiscovery(
-                             PropertyDiscovery.METHODS)
-                         .build());
-
-        datastore.getMapper().map(MethodMappedUser.class);
-        MethodMappedUser user = new MethodMappedUser();
-        MethodMappedFriend friend = new MethodMappedFriend();
-        user.setFriend(friend);
-        user.setFriends(MorphiaReference.wrap(List.of(friend)));
-
-        datastore.save(List.of(friend, user));
-
-        MethodMappedUser loaded = datastore.find(MethodMappedUser.class).first();
-        assertFalse(loaded.getFriends().isResolved());
-        assertEquals(loaded.getFriend(), friend);
-        assertEquals(loaded.getFriends().get().get(0), friend);
-        assertEquals(loaded, user);
-    }
-
-    @Test
     public void testAggregationLookups() {
         final Author author = new Author("Jane Austen");
         getDs().save(author);
@@ -173,6 +150,29 @@ public class TestReferences extends TestBase {
                                      .first();
         ((List<Object>) loaded.get("list"))
             .forEach(f -> assertEquals(f.getClass(), Long.class));
+    }
+
+    @Test
+    public void testMethodMapping() {
+        Datastore datastore = createDatastore(getMongoClient(), TEST_DB_NAME,
+            MapperOptions.builder()
+                         .propertyDiscovery(
+                             PropertyDiscovery.METHODS)
+                         .build());
+
+        datastore.getMapper().map(MethodMappedUser.class);
+        MethodMappedUser user = new MethodMappedUser();
+        MethodMappedFriend friend = new MethodMappedFriend();
+        user.setFriend(friend);
+        user.setFriends(MorphiaReference.wrap(List.of(friend)));
+
+        datastore.save(List.of(friend, user));
+
+        MethodMappedUser loaded = datastore.find(MethodMappedUser.class).first();
+        assertFalse(loaded.getFriends().isResolved());
+        assertEquals(loaded.getFriend(), friend);
+        assertEquals(loaded.getFriends().get().get(0), friend);
+        assertEquals(loaded, user);
     }
 
     @Test

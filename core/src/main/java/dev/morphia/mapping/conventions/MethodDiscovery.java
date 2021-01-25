@@ -37,10 +37,9 @@ public class MethodDiscovery implements MorphiaConvention {
     }
 
     private List<Annotation> discoverAnnotations(Method getter, Method setter) {
-        List<Annotation> collect = List.of(getter, setter).stream()
-                                       .flatMap(m -> Arrays.stream(m.getDeclaredAnnotations()))
-                                       .collect(Collectors.toList());
-        return collect;
+        return List.of(getter, setter).stream()
+                   .flatMap(m -> Arrays.stream(m.getDeclaredAnnotations()))
+                   .collect(Collectors.toList());
     }
 
     private void processMethods(Class<?> type, Map<String, Map<String, Type>> parameterization) {
