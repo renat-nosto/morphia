@@ -9,17 +9,13 @@ import dev.morphia.mapping.codec.pojo.TypeData;
 import org.bson.codecs.pojo.PropertyAccessor;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class FieldDiscovery implements MorphiaConvention {
 
     @Override
     public void apply(Datastore datastore, EntityModelBuilder builder) {
-        Map<String, Map<String, Type>> parameterization = builder.parameterization();
         List<Class<?>> list = new ArrayList<>(List.of(builder.getType()));
         list.addAll(builder.classHierarchy());
 
@@ -29,7 +25,7 @@ public class FieldDiscovery implements MorphiaConvention {
 
                 propertyModelBuilder
                     .name(field.getName())
-                    .typeData(getTypeData(parameterization, type, field))
+                    .typeData(builder.getTypeData(type, TypeData.newInstance(field), field.getGenericType()))
                     .annotations(List.of(field.getDeclaredAnnotations()))
                     .accessor(getAccessor(field, propertyModelBuilder))
                     .modifiers(field.getModifiers())
@@ -43,21 +39,4 @@ public class FieldDiscovery implements MorphiaConvention {
                ? new ArrayFieldAccessor(property.typeData(), field)
                : new FieldAccessor(field);
     }
-
-    private TypeData<?> getTypeData(Map<String, Map<String, Type>> parameterization, Class<?> type, Field field) {
-        TypeData<?> typeData = TypeData.newInstance(field);
-
-        Type genericType = field.getGenericType();
-        if (genericType instanceof TypeVariable) {
-            Map<String, Type> map = parameterization.get(type.getName());
-            if (map != null) {
-                Type mapped = map.get(((TypeVariable<?>) genericType).getName());
-                if (mapped instanceof Class) {
-                    typeData = TypeData.newInstance(field.getGenericType(), (Class<?>) mapped);
-                }
-            }
-        }
-        return typeData;
-    }
-
 }

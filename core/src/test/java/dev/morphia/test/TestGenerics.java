@@ -55,8 +55,7 @@ public class TestGenerics extends TestBase {
     public void testMethodMappedGenericEntities() {
         Datastore datastore = createDatastore(getMongoClient(), TEST_DB_NAME,
             MapperOptions.builder()
-                         .propertyDiscovery(
-                             PropertyDiscovery.METHODS)
+                         .propertyDiscovery(PropertyDiscovery.METHODS)
                          .build());
 
         EntityModel entityModel = datastore.getMapper().map(MethodMappedSpecializedEntity.class).get(0);

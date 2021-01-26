@@ -46,7 +46,6 @@ public class EntityModelBuilder {
     private final List<EntityModel> interfaceModels;
     private EntityModel superclass;
     private final Map<String, Map<String, Type>> parameterization;
-    private final boolean debug;
     /**
      * Create a builder
      *
@@ -56,8 +55,6 @@ public class EntityModelBuilder {
     public EntityModelBuilder(Datastore datastore, Class<?> type) {
         this.datastore = datastore;
         this.type = type;
-
-        debug = getType().getName().contains("SpecializedEntity");
 
         buildHierarchy(this.type);
         parameterization = findParameterization(type);
@@ -144,15 +141,6 @@ public class EntityModelBuilder {
             type = type.getSuperclass();
         }
         return classes;
-    }
-
-    /**
-     * @return the type parameterization mapped to the type that declares it
-     * @see #classHierarchy()
-     * @since 2.2
-     */
-    public Map<String, Map<String, Type>> parameterization() {
-        return parameterization;
     }
 
     /**
@@ -390,6 +378,20 @@ public class EntityModelBuilder {
                 }
             }
         }
+    }
+
+    public TypeData<?> getTypeData(Class<?> type, TypeData<?> suggested, Type genericType) {
+
+        if (genericType instanceof TypeVariable) {
+            Map<String, Type> map = parameterization.get(type.getName());
+            if (map != null) {
+                Type mapped = map.get(((TypeVariable<?>) genericType).getName());
+                if (mapped instanceof Class) {
+                    suggested = TypeData.newInstance(genericType, (Class<?>) mapped);
+                }
+            }
+        }
+        return suggested;
     }
 
 }
