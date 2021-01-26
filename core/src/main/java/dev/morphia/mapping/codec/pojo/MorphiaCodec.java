@@ -33,7 +33,7 @@ import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
  */
 @SuppressWarnings("unchecked")
 public class MorphiaCodec<T> implements CollectibleCodec<T> {
-    private final PropertyModel idField;
+    private final PropertyModel idProperty;
     private final Mapper mapper;
     private final EntityModel entityModel;
     private final CodecRegistry registry;
@@ -60,7 +60,7 @@ public class MorphiaCodec<T> implements CollectibleCodec<T> {
         this.entityModel = model;
         this.registry = fromRegistries(fromCodecs(this), registry);
         this.propertyCodecRegistry = new PropertyCodecRegistryImpl(this, registry, propertyCodecProviders);
-        idField = model.getIdProperty();
+        idProperty = model.getIdProperty();
         specializePropertyCodecs();
         encoder = new EntityEncoder(this);
         decoder = new EntityDecoder(this);
@@ -135,7 +135,7 @@ public class MorphiaCodec<T> implements CollectibleCodec<T> {
     @Override
     public Object generateIdIfAbsentFromDocument(Object entity) {
         if (!documentHasId(entity)) {
-            idField.setValue(entity, convert(new ObjectId(), idField.getType()));
+            idProperty.setValue(entity, convert(new ObjectId(), idProperty.getType()));
         }
         return entity;
     }

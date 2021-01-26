@@ -52,11 +52,11 @@ public abstract class MorphiaReference<T> {
         }
     }
 
-    static Object wrapId(Mapper mapper, PropertyModel field, Object entity) {
+    static Object wrapId(Mapper mapper, PropertyModel property, Object entity) {
         Object id = mapper.getId(entity);
         mapper.getEntityModel(entity.getClass());
         Object encoded = id;
-        if (!entity.getClass().equals(field.getType())) {
+        if (!entity.getClass().equals(property.getType())) {
             encoded = new DBRef(mapper.getEntityModel(entity.getClass()).getCollectionName(), encoded);
         }
 

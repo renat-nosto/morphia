@@ -12,15 +12,15 @@ import java.util.Set;
 /**
  * Checks that lazy references aren't used in conjunction with arrays.
  */
-public class LazyReferenceOnArray extends FieldConstraint {
+public class LazyReferenceOnArray extends PropertyConstraint {
 
     @Override
-    protected void check(Mapper mapper, EntityModel model, PropertyModel mf, Set<ConstraintViolation> ve) {
-        final Reference ref = mf.getAnnotation(Reference.class);
+    protected void check(Mapper mapper, EntityModel model, PropertyModel propertyModel, Set<ConstraintViolation> ve) {
+        final Reference ref = propertyModel.getAnnotation(Reference.class);
         if (ref != null && ref.lazy()) {
-            final Class<?> type = mf.getType();
+            final Class<?> type = propertyModel.getType();
             if (type.isArray()) {
-                ve.add(new ConstraintViolation(Level.FATAL, model, mf, getClass(),
+                ve.add(new ConstraintViolation(Level.FATAL, model, propertyModel, getClass(),
                     "The lazy attribute cannot be used for an Array. If you need a lazy array "
                     + "please use ArrayList instead."));
             }

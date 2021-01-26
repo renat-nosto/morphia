@@ -113,11 +113,11 @@ public class MapReference<T> extends MorphiaReference<Map<Object, T>> {
      * {@inheritDoc}
      */
     @Override
-    public Object encode(Mapper mapper, Object value, PropertyModel field) {
+    public Object encode(Mapper mapper, Object value, PropertyModel property) {
         if (isResolved()) {
             Map<String, Object> ids = new LinkedHashMap<>();
             for (Entry<Object, T> entry : get().entrySet()) {
-                ids.put(entry.getKey().toString(), wrapId(mapper, field, entry.getValue()));
+                ids.put(entry.getKey().toString(), wrapId(mapper, property, entry.getValue()));
             }
             return ids;
         } else {

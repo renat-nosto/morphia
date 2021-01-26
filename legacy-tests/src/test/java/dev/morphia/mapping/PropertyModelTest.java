@@ -34,64 +34,64 @@ public class PropertyModelTest extends TestBase {
 
     @Test
     public void arrayFieldMapping() {
-        final PropertyModel field = getMappedField("arrayOfInt");
+        final PropertyModel property = getMappedField("arrayOfInt");
 
-        assertFalse(field.isScalarValue());
-        assertTrue(field.isMultipleValues());
-        assertTrue(field.isArray());
-        assertTrue(field.getType().isArray());
-        assertEquals("arrayOfInt", field.getName());
-        assertEquals("arrayOfInt", field.getMappedName());
+        assertFalse(property.isScalarValue());
+        assertTrue(property.isMultipleValues());
+        assertTrue(property.isArray());
+        assertTrue(property.getType().isArray());
+        assertEquals("arrayOfInt", property.getName());
+        assertEquals("arrayOfInt", property.getMappedName());
     }
 
     @Test
     public void basicFieldMapping() {
-        final PropertyModel field = getMappedField("name");
+        final PropertyModel property = getMappedField("name");
 
-        assertTrue(field.isScalarValue());
-        assertSame(String.class, field.getType());
-        assertEquals("name", field.getName());
-        assertEquals("n", field.getMappedName());
+        assertTrue(property.isScalarValue());
+        assertSame(String.class, property.getType());
+        assertEquals("name", property.getName());
+        assertEquals("n", property.getMappedName());
     }
 
     @Test
     public void collectionFieldMapping() {
-        final PropertyModel field = getMappedField("listOfString");
+        final PropertyModel property = getMappedField("listOfString");
 
-        assertFalse(field.isScalarValue());
-        assertTrue(field.isMultipleValues());
-        assertFalse(field.isArray());
-        assertSame(List.class, field.getType());
-        assertSame(String.class, field.getNormalizedType());
-        assertEquals("listOfString", field.getName());
-        assertEquals("listOfString", field.getMappedName());
+        assertFalse(property.isScalarValue());
+        assertTrue(property.isMultipleValues());
+        assertFalse(property.isArray());
+        assertSame(List.class, property.getType());
+        assertSame(String.class, property.getNormalizedType());
+        assertEquals("listOfString", property.getName());
+        assertEquals("listOfString", property.getMappedName());
     }
 
     @Test
     public void idFieldMapping() {
-        final PropertyModel field = getMappedField("id");
+        final PropertyModel property = getMappedField("id");
 
-        assertTrue(field.isScalarValue());
-        assertSame(ObjectId.class, field.getType());
-        assertEquals("id", field.getName());
-        assertEquals("_id", field.getMappedName());
+        assertTrue(property.isScalarValue());
+        assertSame(ObjectId.class, property.getType());
+        assertEquals("id", property.getName());
+        assertEquals("_id", property.getMappedName());
     }
 
     @Test
     public void nestedCollectionsMapping() {
-        final PropertyModel field = getMappedField("listOfListOfString");
+        final PropertyModel property = getMappedField("listOfListOfString");
 
-        assertFalse(field.isScalarValue());
-        assertTrue(field.isMultipleValues());
-        assertFalse(field.isArray());
-        assertSame(List.class, field.getType());
+        assertFalse(property.isScalarValue());
+        assertTrue(property.isMultipleValues());
+        assertFalse(property.isArray());
+        assertSame(List.class, property.getType());
 
-        final TypeData<?> typeData = field.getTypeData();
+        final TypeData<?> typeData = property.getTypeData();
         assertSame(List.class, typeData.getType());
 
         assertEquals(String.class, typeData.getTypeParameters().get(0).getTypeParameters().get(0).getType());
-        assertEquals("listOfListOfString", field.getName());
-        assertEquals("listOfListOfString", field.getMappedName());
+        assertEquals("listOfListOfString", property.getName());
+        assertEquals("listOfListOfString", property.getMappedName());
 
         final List<List<String>> list = new ArrayList<>();
         list.add(dbList("a", "b", "c"));

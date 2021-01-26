@@ -104,7 +104,7 @@ public class PathTarget {
             resolve();
         }
         StringJoiner joiner = new StringJoiner(".");
-        segments.forEach(s -> joiner.add(s));
+        segments.forEach(joiner::add);
         return joiner.toString();
     }
 
@@ -132,7 +132,7 @@ public class PathTarget {
     private void resolve() {
         context = this.root;
         position = 0;
-        PropertyModel field = null;
+        PropertyModel property = null;
         while (hasNext()) {
             String segment = next();
 
@@ -143,14 +143,14 @@ public class PathTarget {
                 }
                 segment = next();
             }
-            field = resolveField(segment);
+            property = resolveProperty(segment);
 
-            if (field != null) {
-                if (hasNext() && field.isReference()) {
+            if (property != null) {
+                if (hasNext() && property.isReference()) {
                     failValidation();
                 }
-                translate(field.getMappedName());
-                if (field.isMap() && hasNext()) {
+                translate(property.getMappedName());
+                if (property.isMap() && hasNext()) {
                     next();  // consume the map key segment
                 }
             } else {
@@ -159,7 +159,7 @@ public class PathTarget {
                 }
             }
         }
-        target = field;
+        target = property;
         resolved = true;
     }
 
@@ -172,14 +172,14 @@ public class PathTarget {
         segments.set(position - 1, nameToStore);
     }
 
-    private PropertyModel resolveField(String segment) {
+    private PropertyModel resolveProperty(String segment) {
         if (context != null) {
             PropertyModel mf = context.getProperty(segment);
             if (mf == null) {
                 Iterator<EntityModel> subTypes = context.getSubtypes().iterator();
                 while (mf == null && subTypes.hasNext()) {
                     context = subTypes.next();
-                    mf = resolveField(segment);
+                    mf = resolveProperty(segment);
                 }
             }
 

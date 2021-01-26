@@ -98,11 +98,11 @@ public abstract class CollectionReference<C extends Collection> extends MorphiaR
     }
 
     @Override
-    public Object encode(Mapper mapper, Object value, PropertyModel field) {
+    public Object encode(Mapper mapper, Object value, PropertyModel property) {
         if (isResolved()) {
             List ids = new ArrayList();
             for (Object entity : get()) {
-                ids.add(wrapId(mapper, field, entity));
+                ids.add(wrapId(mapper, property, entity));
             }
             return ids;
         } else {

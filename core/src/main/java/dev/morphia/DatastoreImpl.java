@@ -590,7 +590,7 @@ public class DatastoreImpl implements AdvancedDatastore {
         return true;
     }
 
-    private <T> void updateVersion(T entity, PropertyModel field, Long newVersion) {
-        field.setValue(entity, newVersion);
+    private <T> void updateVersion(T entity, PropertyModel property, Long newVersion) {
+        property.setValue(entity, newVersion);
     }
 }

@@ -64,7 +64,7 @@ public class ConstructorCreator implements MorphiaInstanceCreator {
      */
     public static Constructor<?> getFullConstructor(EntityModel model) {
         for (Constructor<?> constructor : model.getType().getDeclaredConstructors()) {
-            if (constructor.getParameterCount() == model.getProperties().size() && namesMatchFields(model, constructor)) {
+            if (constructor.getParameterCount() == model.getProperties().size() && namesMatchProperties(model, constructor)) {
                 return constructor;
             }
         }
@@ -81,7 +81,7 @@ public class ConstructorCreator implements MorphiaInstanceCreator {
         return name != null ? name.value() : parameter.getName();
     }
 
-    private static boolean namesMatchFields(EntityModel model, Constructor<?> constructor) {
+    private static boolean namesMatchProperties(EntityModel model, Constructor<?> constructor) {
         for (Parameter parameter : constructor.getParameters()) {
             if (model.getProperty(getParameterName(parameter)) == null) {
                 return false;

@@ -303,8 +303,8 @@ public class AggregationPipelineImpl implements AggregationPipeline {
     private Document toDocument(Projection projection) {
         String target;
         if (firstStage) {
-            PropertyModel field = mapper.getEntityModel(source).getProperty(projection.getTarget());
-            target = field != null ? field.getMappedName() : projection.getTarget();
+            PropertyModel property = mapper.getEntityModel(source).getProperty(projection.getTarget());
+            target = property != null ? property.getMappedName() : projection.getTarget();
         } else {
             target = projection.getTarget();
         }

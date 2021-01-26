@@ -143,8 +143,8 @@ public class TestSerializedFormat extends TestBase {
     }
 
     private void verifyCoverage(Document document) {
-        for (PropertyModel field : getMapper().getEntityModel(ReferenceType.class).getProperties()) {
-            String name = field.getMappedName();
+        for (PropertyModel property : getMapper().getEntityModel(ReferenceType.class).getProperties()) {
+            String name = property.getMappedName();
             boolean found = document.containsKey(name);
             if (!found) {
                 for (String s : document.keySet()) {

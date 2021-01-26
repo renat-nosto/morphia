@@ -9,16 +9,16 @@ import dev.morphia.mapping.validation.ConstraintViolation;
 import java.util.Set;
 
 /**
- * Defines a field constraint.
+ * Defines a property constraint.
  */
-public abstract class FieldConstraint implements ClassConstraint {
+public abstract class PropertyConstraint implements ClassConstraint {
     @Override
     public final void check(Mapper mapper, EntityModel entityModel, Set<ConstraintViolation> ve) {
-        for (PropertyModel mf : entityModel.getProperties()) {
-            check(mapper, entityModel, mf, ve);
+        for (PropertyModel model : entityModel.getProperties()) {
+            check(mapper, entityModel, model, ve);
         }
     }
 
-    protected abstract void check(Mapper mapper, EntityModel entityModel, PropertyModel mf, Set<ConstraintViolation> ve);
+    protected abstract void check(Mapper mapper, EntityModel entityModel, PropertyModel propertyModel, Set<ConstraintViolation> ve);
 
 }

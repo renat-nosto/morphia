@@ -13,15 +13,15 @@ import java.util.Set;
 /**
  * Checks that proxy deps are present if lazy references are used.
  */
-public class LazyReferenceMissingDependencies extends FieldConstraint {
+public class LazyReferenceMissingDependencies extends PropertyConstraint {
 
     @Override
-    protected void check(Mapper mapper, EntityModel entityModel, PropertyModel mf, Set<ConstraintViolation> ve) {
-        final Reference ref = mf.getAnnotation(Reference.class);
+    protected void check(Mapper mapper, EntityModel entityModel, PropertyModel propertyModel, Set<ConstraintViolation> ve) {
+        final Reference ref = propertyModel.getAnnotation(Reference.class);
         if (ref != null) {
             if (ref.lazy()) {
                 if (!LazyFeatureDependencies.assertProxyClassesPresent()) {
-                    ve.add(new ConstraintViolation(Level.SEVERE, entityModel, mf, getClass(),
+                    ve.add(new ConstraintViolation(Level.SEVERE, entityModel, propertyModel, getClass(),
                         "Lazy references need ByteBuddy on the classpath."));
                 }
             }

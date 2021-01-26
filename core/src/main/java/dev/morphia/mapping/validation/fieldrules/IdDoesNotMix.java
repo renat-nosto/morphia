@@ -16,15 +16,16 @@ import java.util.Set;
 /**
  * Checks that @Id is not with any other mapping annotation
  */
-public class IdDoesNotMix extends FieldConstraint {
+public class IdDoesNotMix extends PropertyConstraint {
 
     @Override
-    protected void check(Mapper mapper, EntityModel entityModel, PropertyModel mf, Set<ConstraintViolation> ve) {
+    protected void check(Mapper mapper, EntityModel entityModel, PropertyModel propertyModel, Set<ConstraintViolation> ve) {
         // an @Id field can not be a Value, Reference, or Embedded
-        if (mf.hasAnnotation(Id.class)) {
-            if (mf.hasAnnotation(Reference.class) || mf.hasAnnotation(Embedded.class) || mf.hasAnnotation(Property.class)) {
-                ve.add(new ConstraintViolation(Level.FATAL, entityModel, mf, getClass(),
-                    mf.getFullName() + " is annotated as @" + Id.class.getSimpleName()
+        if (propertyModel.hasAnnotation(Id.class)) {
+            if (propertyModel.hasAnnotation(Reference.class) || propertyModel.hasAnnotation(Embedded.class) ||
+                propertyModel.hasAnnotation(Property.class)) {
+                ve.add(new ConstraintViolation(Level.FATAL, entityModel, propertyModel, getClass(),
+                    propertyModel.getFullName() + " is annotated as @" + Id.class.getSimpleName()
                     + " and cannot be mixed with other annotations (like @Reference)"));
             }
         }
