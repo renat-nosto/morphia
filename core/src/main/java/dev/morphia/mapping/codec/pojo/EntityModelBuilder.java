@@ -46,7 +46,7 @@ public class EntityModelBuilder {
     private final List<EntityModel> interfaceModels;
     private EntityModel superclass;
     private final Map<String, Map<String, Type>> parameterization;
-
+    private final boolean debug;
     /**
      * Create a builder
      *
@@ -56,6 +56,8 @@ public class EntityModelBuilder {
     public EntityModelBuilder(Datastore datastore, Class<?> type) {
         this.datastore = datastore;
         this.type = type;
+
+        debug = getType().getName().contains("SpecializedEntity");
 
         buildHierarchy(this.type);
         parameterization = findParameterization(type);

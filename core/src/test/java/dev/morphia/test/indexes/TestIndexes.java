@@ -33,7 +33,7 @@ import dev.morphia.mapping.MapperOptions;
 import dev.morphia.mapping.MapperOptions.PropertyDiscovery;
 import dev.morphia.mapping.codec.pojo.EntityModel;
 import dev.morphia.test.TestBase;
-import dev.morphia.test.models.MethodMappedUser;
+import dev.morphia.test.models.methods.MethodMappedUser;
 import dev.morphia.utils.IndexType;
 import org.bson.Document;
 import org.bson.types.ObjectId;

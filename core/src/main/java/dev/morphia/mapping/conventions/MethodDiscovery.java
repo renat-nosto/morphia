@@ -9,23 +9,27 @@ import dev.morphia.mapping.codec.pojo.TypeData;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
-import static dev.morphia.mapping.conventions.FieldDiscovery.getMappedFieldName;
-
 public class MethodDiscovery implements MorphiaConvention {
     private EntityModelBuilder entityModelBuilder;
     private Datastore datastore;
+
+    private boolean debug;
 
     @Override
     public void apply(Datastore datastore, EntityModelBuilder builder) {
         this.datastore = datastore;
         this.entityModelBuilder = builder;
+
+        debug = builder.getType().getName().contains("SpecializedEntity");
 
         Map<String, Map<String, Type>> parameterization = builder.parameterization();
         List<Class<?>> list = new ArrayList<>(List.of(builder.getType()));
@@ -42,7 +46,34 @@ public class MethodDiscovery implements MorphiaConvention {
                    .collect(Collectors.toList());
     }
 
+    private TypeData<?> getTypeData(Map<String, Map<String, Type>> parameterization, Class<?> type, Method method) {
+        TypeData<?> typeData = TypeData.newInstance(method);
+
+        Type genericType = method.getGenericReturnType();
+        if (genericType instanceof TypeVariable) {
+            Map<String, Type> map = parameterization.get(type.getName());
+            if (map != null) {
+                Type mapped = map.get(((TypeVariable<?>) genericType).getName());
+                if (mapped instanceof Class) {
+                    typeData = TypeData.newInstance(method.getGenericReturnType(), (Class<?>) mapped);
+                }
+            }
+        }
+        return typeData;
+    }
+
     private void processMethods(Class<?> type, Map<String, Map<String, Type>> parameterization) {
+        class Methods {
+            private final Method getter;
+            private final Method setter;
+
+            Methods(List<Method> methods) {
+                List<Method> collect = methods.stream().sorted(Comparator.comparing(Method::getName))
+                                              .collect(Collectors.toList());
+                getter = collect.get(0);
+                setter = collect.get(1);
+            }
+        }
 
         Map<String, List<Method>> properties = Arrays.stream(type.getDeclaredMethods())
                                                      .filter(m -> m.getName().startsWith("get")
@@ -54,26 +85,17 @@ public class MethodDiscovery implements MorphiaConvention {
                                                                                          : stripPrefix(m, 2)));
 
         for (Entry<String, List<Method>> entry : properties.entrySet()) {
-            String name = entry.getKey();
-            List<Method> methods = entry.getValue();
-            if (methods.size() == 2) {
-                Method getter;
-                Method setter;
-                if (methods.get(0).getName().startsWith("set")) {
-                    setter = methods.get(0);
-                    getter = methods.get(1);
-                } else {
-                    getter = methods.get(0);
-                    setter = methods.get(1);
-                }
-                TypeData<?> typeData = TypeData.newInstance(getter);
+            List<Method> value = entry.getValue();
+            if (value.size() == 2) {
+                Methods methods = new Methods(value);
+                TypeData<?> typeData = getTypeData(parameterization, type, methods.getter);
 
                 PropertyModelBuilder builder = entityModelBuilder.addProperty();
-                builder.name(name)
-                       .accessor(new MethodAccessor(getter, setter))
-                       .annotations(discoverAnnotations(getter, setter))
+                builder.name(entry.getKey())
+                       .accessor(new MethodAccessor(methods.getter, methods.setter))
+                       .annotations(discoverAnnotations(methods.getter, methods.setter))
                        .typeData(typeData)
-                       .mappedName(getMappedFieldName(datastore.getMapper().getOptions(), builder));
+                       .mappedName(builder.discoverMappedName(datastore.getMapper().getOptions()));
             }
         }
     }

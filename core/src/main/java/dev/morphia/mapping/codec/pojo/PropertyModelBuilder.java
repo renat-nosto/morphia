@@ -17,6 +17,12 @@
 package dev.morphia.mapping.codec.pojo;
 
 import dev.morphia.Datastore;
+import dev.morphia.annotations.Id;
+import dev.morphia.annotations.Property;
+import dev.morphia.annotations.Reference;
+import dev.morphia.annotations.Version;
+import dev.morphia.mapping.Mapper;
+import dev.morphia.mapping.MapperOptions;
 import org.bson.codecs.pojo.PropertyAccessor;
 import org.bson.codecs.pojo.PropertySerialization;
 
@@ -50,6 +56,30 @@ public final class PropertyModelBuilder {
 
     PropertyModelBuilder(Datastore datastore) {
         this.datastore = datastore;
+    }
+
+    @SuppressWarnings("ConstantConditions")
+    public String discoverMappedName(MapperOptions options) {
+        if (hasAnnotation(Id.class)) {
+            return "_id";
+        } else if (hasAnnotation(Property.class)) {
+            final Property mv = getAnnotation(Property.class);
+            if (!mv.value().equals(Mapper.IGNORED_FIELDNAME)) {
+                return mv.value();
+            }
+        } else if (hasAnnotation(Reference.class)) {
+            final Reference mr = getAnnotation(Reference.class);
+            if (!mr.value().equals(Mapper.IGNORED_FIELDNAME)) {
+                return mr.value();
+            }
+        } else if (hasAnnotation(Version.class)) {
+            final Version me = getAnnotation(Version.class);
+            if (!me.value().equals(Mapper.IGNORED_FIELDNAME)) {
+                return me.value();
+            }
+        }
+
+        return options.getFieldNaming().apply(name());
     }
 
     /**

@@ -1,12 +1,6 @@
 package dev.morphia.mapping.conventions;
 
 import dev.morphia.Datastore;
-import dev.morphia.annotations.Id;
-import dev.morphia.annotations.Property;
-import dev.morphia.annotations.Reference;
-import dev.morphia.annotations.Version;
-import dev.morphia.mapping.Mapper;
-import dev.morphia.mapping.MapperOptions;
 import dev.morphia.mapping.codec.ArrayFieldAccessor;
 import dev.morphia.mapping.codec.FieldAccessor;
 import dev.morphia.mapping.codec.pojo.EntityModelBuilder;
@@ -22,29 +16,6 @@ import java.util.List;
 import java.util.Map;
 
 public class FieldDiscovery implements MorphiaConvention {
-    @SuppressWarnings("ConstantConditions")
-    static String getMappedFieldName(MapperOptions options, PropertyModelBuilder builder) {
-        if (builder.hasAnnotation(Id.class)) {
-            return "_id";
-        } else if (builder.hasAnnotation(Property.class)) {
-            final Property mv = builder.getAnnotation(Property.class);
-            if (!mv.value().equals(Mapper.IGNORED_FIELDNAME)) {
-                return mv.value();
-            }
-        } else if (builder.hasAnnotation(Reference.class)) {
-            final Reference mr = builder.getAnnotation(Reference.class);
-            if (!mr.value().equals(Mapper.IGNORED_FIELDNAME)) {
-                return mr.value();
-            }
-        } else if (builder.hasAnnotation(Version.class)) {
-            final Version me = builder.getAnnotation(Version.class);
-            if (!me.value().equals(Mapper.IGNORED_FIELDNAME)) {
-                return me.value();
-            }
-        }
-
-        return options.getFieldNaming().apply(builder.name());
-    }
 
     @Override
     public void apply(Datastore datastore, EntityModelBuilder builder) {
@@ -62,7 +33,7 @@ public class FieldDiscovery implements MorphiaConvention {
                     .annotations(List.of(field.getDeclaredAnnotations()))
                     .accessor(getAccessor(field, propertyModelBuilder))
                     .modifiers(field.getModifiers())
-                    .mappedName(getMappedFieldName(datastore.getMapper().getOptions(), propertyModelBuilder));
+                    .mappedName(propertyModelBuilder.discoverMappedName(datastore.getMapper().getOptions()));
             }
         }
     }
