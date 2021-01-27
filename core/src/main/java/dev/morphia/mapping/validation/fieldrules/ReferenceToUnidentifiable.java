@@ -1,7 +1,6 @@
 package dev.morphia.mapping.validation.fieldrules;
 
 import dev.morphia.Key;
-import dev.morphia.annotations.Id;
 import dev.morphia.annotations.Reference;
 import dev.morphia.mapping.Mapper;
 import dev.morphia.mapping.MappingException;
@@ -24,17 +23,16 @@ public class ReferenceToUnidentifiable extends PropertyConstraint {
             final Class realType = /*(mf.isScalarValue()) ? mf.getType() : */propertyModel.getNormalizedType();
 
             if (realType == null) {
-                throw new MappingException("Type is null for this MappedField: " + propertyModel);
+                throw new MappingException(Sofia.nullPropertyType(propertyModel));
             }
 
             if (realType.equals(Key.class)) {
-                ve.add(new ConstraintViolation(Level.FATAL, entityModel, propertyModel, getClass(), Sofia.keyNotAllowedAsField()));
+                ve.add(new ConstraintViolation(Level.FATAL, entityModel, propertyModel, getClass(), Sofia.keyNotAllowedAsProperty()));
             } else {
                 EntityModel model = mapper.getEntityModel(realType);
                 if (model == null || model.getIdProperty() == null && !model.getType().isInterface()) {
                     ve.add(new ConstraintViolation(Level.FATAL, entityModel, propertyModel, getClass(),
-                        propertyModel.getFullName() + " is annotated as a @" + Reference.class.getSimpleName() + " but the "
-                        + propertyModel.getType().getName() + " class is missing the @" + Id.class.getSimpleName() + " annotation"));
+                        Sofia.referredTypeMissingId(propertyModel.getFullName(), propertyModel.getType().getName())));
                 }
             }
         }

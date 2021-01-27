@@ -66,7 +66,7 @@ public abstract class MorphiaReference<T> {
     /**
      * @param mapper            the mapper
      * @param value             the value
-     * @param optionalExtraInfo the MappedField
+     * @param optionalExtraInfo the PropertyModel
      * @return the encoded vale
      * @morphia.internal
      */

@@ -10,6 +10,7 @@ import dev.morphia.mapping.codec.pojo.EntityModel;
 import dev.morphia.mapping.codec.pojo.PropertyModel;
 import dev.morphia.mapping.validation.ConstraintViolation;
 import dev.morphia.mapping.validation.ConstraintViolation.Level;
+import dev.morphia.sofia.Sofia;
 
 import java.util.Set;
 
@@ -21,13 +22,12 @@ public class IdDoesNotMix extends PropertyConstraint {
     @Override
     protected void check(Mapper mapper, EntityModel entityModel, PropertyModel propertyModel, Set<ConstraintViolation> ve) {
         // an @Id field can not be a Value, Reference, or Embedded
-        if (propertyModel.hasAnnotation(Id.class)) {
-            if (propertyModel.hasAnnotation(Reference.class) || propertyModel.hasAnnotation(Embedded.class) ||
-                propertyModel.hasAnnotation(Property.class)) {
-                ve.add(new ConstraintViolation(Level.FATAL, entityModel, propertyModel, getClass(),
-                    propertyModel.getFullName() + " is annotated as @" + Id.class.getSimpleName()
-                    + " and cannot be mixed with other annotations (like @Reference)"));
-            }
+        if (propertyModel.hasAnnotation(Id.class)
+            && (propertyModel.hasAnnotation(Reference.class)
+                || propertyModel.hasAnnotation(Embedded.class)
+                || propertyModel.hasAnnotation(Property.class))) {
+            ve.add(new ConstraintViolation(Level.FATAL, entityModel, propertyModel, getClass(),
+                Sofia.invalidAnnotationCombination(propertyModel.getFullName(), Id.class.getSimpleName())));
         }
     }
 }
