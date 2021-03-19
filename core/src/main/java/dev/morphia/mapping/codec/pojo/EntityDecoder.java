@@ -129,8 +129,12 @@ public class EntityDecoder implements org.bson.codecs.Decoder<Object> {
         if (classModel.useDiscriminator()) {
             String discriminator = document.getString(classModel.getDiscriminatorKey());
             if (discriminator != null) {
-                Class<?> entityClass = morphiaCodec.getDiscriminatorLookup().lookup(discriminator);
-                classModel = morphiaCodec.getMapper().getEntityModel(entityClass);
+                try {
+                    Class<?> entityClass = morphiaCodec.getDiscriminatorLookup().lookup(discriminator);
+                    classModel = morphiaCodec.getMapper().getEntityModel(entityClass);
+                } catch (CodecConfigurationException ex) {
+                    // Ignore missing class, use default classModel
+                }
             }
         }
         instanceCreator = classModel.getInstanceCreator();
