@@ -3,6 +3,7 @@ package dev.morphia.mapping.codec.pojo;
 import dev.morphia.annotations.PostLoad;
 import dev.morphia.annotations.PreLoad;
 import dev.morphia.mapping.DiscriminatorLookup;
+import dev.morphia.mapping.NoArgCreator;
 import dev.morphia.mapping.codec.MorphiaInstanceCreator;
 import dev.morphia.mapping.codec.reader.DocumentReader;
 import org.bson.BsonInvalidOperationException;
@@ -121,16 +122,25 @@ public class EntityDecoder implements org.bson.codecs.Decoder<Object> {
     }
 
     private Object decodeWithLifecycle(BsonReader reader, DecoderContext decoderContext) {
-        final Object entity;
-        final MorphiaInstanceCreator instanceCreator = getInstanceCreator(morphiaCodec.getEntityModel());
-        entity = instanceCreator.getInstance();
-
         Document document = morphiaCodec.getRegistry().get(Document.class).decode(reader, decoderContext);
-        morphiaCodec.getEntityModel().callLifecycleMethods(PreLoad.class, entity, document, morphiaCodec.getMapper());
+
+        EntityModel classModel = morphiaCodec.getEntityModel();
+        final MorphiaInstanceCreator instanceCreator;
+        if (classModel.useDiscriminator()) {
+            String discriminator = document.getString(classModel.getDiscriminatorKey());
+            if (discriminator != null) {
+                Class<?> entityClass = morphiaCodec.getDiscriminatorLookup().lookup(discriminator);
+                classModel = morphiaCodec.getMapper().getEntityModel(entityClass);
+            }
+        }
+        instanceCreator = classModel.getInstanceCreator();
+        final Object entity = instanceCreator.getInstance();
+
+        classModel.callLifecycleMethods(PreLoad.class, entity, document, morphiaCodec.getMapper());
 
         decodeProperties(new DocumentReader(document), decoderContext, instanceCreator);
 
-        morphiaCodec.getEntityModel().callLifecycleMethods(PostLoad.class, entity, document, morphiaCodec.getMapper());
+        classModel.callLifecycleMethods(PostLoad.class, entity, document, morphiaCodec.getMapper());
         return entity;
     }
 
