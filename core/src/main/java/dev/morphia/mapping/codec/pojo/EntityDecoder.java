@@ -130,6 +130,8 @@ public class EntityDecoder implements org.bson.codecs.Decoder<Object> {
                 try {
                     Class<?> entityClass = morphiaCodec.getDiscriminatorLookup().lookup(discriminator);
                     classModel = morphiaCodec.getMapper().getEntityModel(entityClass);
+                    // create morphia codec that corresponds to class model
+                    morphiaCodec.getRegistry().get(entityClass);
                 } catch (CodecConfigurationException ex) {
                     // Ignore missing class, use default classModel
                 }
