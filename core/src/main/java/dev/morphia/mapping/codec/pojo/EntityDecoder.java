@@ -3,7 +3,6 @@ package dev.morphia.mapping.codec.pojo;
 import dev.morphia.annotations.PostLoad;
 import dev.morphia.annotations.PreLoad;
 import dev.morphia.mapping.DiscriminatorLookup;
-import dev.morphia.mapping.NoArgCreator;
 import dev.morphia.mapping.codec.MorphiaInstanceCreator;
 import dev.morphia.mapping.codec.reader.DocumentReader;
 import org.bson.BsonInvalidOperationException;
@@ -40,7 +39,7 @@ public class EntityDecoder implements org.bson.codecs.Decoder<Object> {
             EntityModel classModel = morphiaCodec.getEntityModel();
             if (decoderContext.hasCheckedDiscriminator()) {
                 MorphiaInstanceCreator instanceCreator = getInstanceCreator(classModel);
-                decodeProperties(reader, decoderContext, instanceCreator);
+                decodeProperties(reader, decoderContext, instanceCreator, classModel);
                 return instanceCreator.getInstance();
             } else {
                 entity = getCodecFromDocument(reader, classModel.useDiscriminator(), classModel.getDiscriminatorKey(),
@@ -77,9 +76,8 @@ public class EntityDecoder implements org.bson.codecs.Decoder<Object> {
     }
 
     protected void decodeProperties(BsonReader reader, DecoderContext decoderContext,
-                                    MorphiaInstanceCreator instanceCreator) {
+                                    MorphiaInstanceCreator instanceCreator, EntityModel classModel) {
         reader.readStartDocument();
-        EntityModel classModel = morphiaCodec.getEntityModel();
         while (reader.readBsonType() != BsonType.END_OF_DOCUMENT) {
             String name = reader.readName();
             if (classModel.useDiscriminator() && classModel.getDiscriminatorKey().equals(name)) {
@@ -142,7 +140,7 @@ public class EntityDecoder implements org.bson.codecs.Decoder<Object> {
 
         classModel.callLifecycleMethods(PreLoad.class, entity, document, morphiaCodec.getMapper());
 
-        decodeProperties(new DocumentReader(document), decoderContext, instanceCreator);
+        decodeProperties(new DocumentReader(document), decoderContext, instanceCreator, classModel);
 
         classModel.callLifecycleMethods(PostLoad.class, entity, document, morphiaCodec.getMapper());
         return entity;
